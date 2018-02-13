@@ -31,21 +31,19 @@ int data_sent = 0;
 /* Clock */
 clock_t start, end, duration;
 
+/* Get time of day*/
+struct timeval t_start, t_end, temp;
+
 void Usage( int argc, char *argv[] );
 void Setup_Server();
 void Setup_Client();
 
 int main( int argc, char *argv[] ){
-    /* Host_IP = "127.0.0.1"; */
     Host_IP = "0.0.0.0";
     Model = "-c";
     Port = 4444;
     Time = 10;
 
-/*
-	duration = Time;
-	ctime(&duration);
-*/
     int i;
     for(i = 0; i < 1000; i++){
         data[i] = '0';
@@ -131,30 +129,32 @@ void Setup_Server(){
 
     FILE * file_fd;
     file_fd = fopen ("./test.txt","w");
-    start = clock();
+    /* start = clock(); */
+    int begin = 1;
 
     while(1){
         ssize_t nb = recv( sock_new, &buffer, 1000, 0);
-        /*
-        if ( nb == -1 ) err( "recv failed" );
-        else if ( nb == 0 ) printf("nb = 0\n");  got end-of-stream 
-        */
+        if(begin == 1){
+            gettimeofday(&t_start, NULL);
+            begin = 0;
+        }
         if (buffer[0] == 'b'){
             buffer[0] = 'a';
 			printf("Sending ack packet\n");
             send(sock_new , &buffer , sizeof(buffer) , 0 );
-            printf("Time Elapsed: %f\n",(double) (clock() - start) / CLOCKS_PER_SEC);
+            /*printf("Time Elapsed: %f\n",(double) (clock() - start) / CLOCKS_PER_SEC);*/
             break;
         } 
-        else{
+        else if (nb != 0 || nb != -1){
             fwrite(buffer, sizeof(buffer),1,file_fd);
             data_rec+=1;
         }
-        nb = 0;
     }
     fclose (file_fd);
     
     /* printf("%s\n",buffer); */
+    gettimeofday(&t_end, NULL);
+    printf("Time Elapsed: %ld\n",(t_end.tv_sec - t_start.tv_sec));
     printf("Total Data received: %d KB\n", data_rec);
     printf("Data Received, Server Closing\n");
     close(sock_new);
@@ -183,59 +183,36 @@ void Setup_Client(){
         perror("Fail to connect to server \n");
         exit(1);
     } 
-
-    /* Data transmission*/
-    start = clock(); 
-	/* 
-    start = time(NULL);
-    end = start + duration;
-    */
-
-    
-    struct timeval t_start, t_end, temp;
+   
+    FILE * file_fd;
+    file_fd = fopen ("./test1.txt","w");
+    /* Start time*/
     gettimeofday(&t_start, NULL);
 
+    /* Send data*/
     while(1){
         gettimeofday(&temp,NULL);
         if(temp.tv_sec - t_start.tv_sec >= Time){
             break;
         } else {
             send(sock , &data , sizeof(data) , 0 );
+            fwrite(buffer, sizeof(buffer),1,file_fd);
             data_sent+=1;
         }
     }
-
-    gettimeofday(&t_end, NULL);
-    printf("Time Elapsed: %ld\n",(t_end.tv_sec - t_start.tv_sec));
-
-	/*int sent_bits;
-    while(1){
-	// while(start < end){ 
-        if((fabs(((double)clock() - start) / CLOCKS_PER_SEC )- Time) >= .00000001){
-            break;
-        }
-        sent_bits = send(sock , &data , sizeof(data) , 0 );
-		/. printf("%d\n",sent_bits); 
-        if(sent_bits != -1 ){
-	    	data_sent+=1;
-            printf("Time Elapsed: %f\n", (double) (clock() - start) / CLOCKS_PER_SEC);
-    	}
- 		sent_bits = -1;
-    }*/
-
+    fclose (file_fd);
 
     /* Sending out final closing package*/
     data[0] = 'b';
     send(sock , &data , sizeof(data) , 0 );
-    /*printf("%s\n",data);*/
     
     /* Waiting for ack package*/
 	recv( sock, &buffer, 1000,0);
 
     /* Statistics*/
-    double time_elapsed = (double) (clock() - start) / CLOCKS_PER_SEC;
-    /* printf("Time Elapsed: %f\n",time_elapsed); */
-    printf("Sent=%d KB Rate=%f Mbps\n", data_sent, (data_sent*.008)/time_elapsed);
+    gettimeofday(&t_end, NULL);
+    printf("Time Elapsed: %ld\n",(t_end.tv_sec - t_start.tv_sec));
+    printf("Sent=%d KB Rate=%f Mbps\n", data_sent, (data_sent*.008)/(t_end.tv_sec - t_start.tv_sec));
     printf("Data Sent, Client Closing\n");
     close(sock);
 }
