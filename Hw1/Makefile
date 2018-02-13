@@ -1,4 +1,4 @@
-C = gcc
+CC = gcc
 CFLAGS = -g -c -ansi
 
 all: iPerfer
