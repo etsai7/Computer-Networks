@@ -51,6 +51,7 @@ int main( int argc, char *argv[] ){
     data[998] = '\n';
     data[999] = '\0';
 
+    printf("\n------------------------------------------------------------------------------------------\n");
     Usage( argc, argv );
 
     if( !strncmp( Model, "-s", 2 )){
@@ -64,7 +65,6 @@ int main( int argc, char *argv[] ){
 
 void Usage(int argc, char *argv[]){
 
-    printf("\n");
     while(--argc > 0 ){
         argv++;
 
@@ -129,7 +129,6 @@ void Setup_Server(){
 
     FILE * file_fd;
     file_fd = fopen ("./test.txt","w");
-    /* start = clock(); */
     int begin = 1;
 
     while(1){
@@ -142,7 +141,6 @@ void Setup_Server(){
             buffer[0] = 'a';
 			printf("Sending ack packet\n");
             send(sock_new , &buffer , sizeof(buffer) , 0 );
-            /*printf("Time Elapsed: %f\n",(double) (clock() - start) / CLOCKS_PER_SEC);*/
             break;
         } 
         else if (nb != 0 || nb != -1){
@@ -152,12 +150,14 @@ void Setup_Server(){
     }
     fclose (file_fd);
     
-    /* printf("%s\n",buffer); */
+    /* Statistics */
     gettimeofday(&t_end, NULL);
+    printf("\nSTATISTICS\n");
     printf("Time Elapsed: %ld\n",(t_end.tv_sec - t_start.tv_sec));
-    printf("Total Data received: %d KB\n", data_rec);
+    printf("Received: %d KB Rate=%f Mbps\n", data_rec, (data_rec*.008)/(t_end.tv_sec - t_start.tv_sec));
     printf("Data Received, Server Closing\n");
     close(sock_new);
+    printf("------------------------------------------------------------------------------------------\n\n");
 }
 
 void Setup_Client(){
@@ -192,7 +192,8 @@ void Setup_Client(){
     /* Send data*/
     while(1){
         gettimeofday(&temp,NULL);
-        if(temp.tv_sec - t_start.tv_sec >= Time){
+        if((((temp.tv_sec*1000000 + temp.tv_usec) - (t_start.tv_sec * 1000000 + t_start.tv_usec))/(double)1000000) - Time > .000000000001){
+        /*if(temp.tv_sec - t_start.tv_sec >= Time){*/
             break;
         } else {
             send(sock , &data , sizeof(data) , 0 );
@@ -211,8 +212,12 @@ void Setup_Client(){
 
     /* Statistics*/
     gettimeofday(&t_end, NULL);
-    printf("Time Elapsed: %ld\n",(t_end.tv_sec - t_start.tv_sec));
+
+    printf("\nSTATISTICS\n");
+    printf("Time Elapsed: %ld\n",((t_end.tv_sec*1000000 + t_end.tv_usec) - (t_start.tv_sec * 1000000 + t_start.tv_usec))/ (long int)1000000);
+/*    printf("Time Elapsed: %ld\n",(t_end.tv_sec - t_start.tv_sec));*/
     printf("Sent=%d KB Rate=%f Mbps\n", data_sent, (data_sent*.008)/(t_end.tv_sec - t_start.tv_sec));
     printf("Data Sent, Client Closing\n");
     close(sock);
+    printf("------------------------------------------------------------------------------------------\n\n");
 }
