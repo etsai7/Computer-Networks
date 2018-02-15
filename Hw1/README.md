@@ -52,7 +52,7 @@ Alternatively, if you have trouble with the method above, you can also set up a 
 
 #### GUI in MininetVM
 
-Details can be found at <https://github.com/mininet/mininet/wiki/FAQ#vm-console-gui>, but you can follow this basic set of instructions to setup a working GUI:
+Details can be found at [Mininet GUI](https://github.com/mininet/mininet/wiki/FAQ#vm-console-gui), but you can follow this basic set of instructions to setup a working GUI:
 
 * Update: `sudo apt-get update`
 * Install the `lxde` desktop environment: `sudo apt-get install xinit lxde`
