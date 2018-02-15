@@ -68,6 +68,10 @@ if [ -z "$DISPLAY" ] && [ -n "$XDG_VTNR" ] && [ "$XDG_VTNR" -eq 1 ]; then
 fi
 ```
 
+To launch hosts: `xterm <hostname>`
+
+This will launch a separate terminal to run `iPerfer` from that host and its IP address and Port
+
 To transfer files to/from your VM you should use the `scp` (secure copy) command. See the `scp` man page, or find a tutorial online, for instructions on how to use `scp`.
 
 <a name="part3"></a>
