@@ -1,0 +1,7 @@
+Client:
+Sent=74530 KB Rate=23.849600 Mbps
+Time Elapsed: 25  seconds
+
+Server
+Received=74530 KB Rate=23.849600 Mbps
+Time Elapsed: 25 seconds

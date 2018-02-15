@@ -1,0 +1,7 @@
+H1 Client
+Sent=58050 KB Rate=19.350000 Mbps
+Time Elapsed: 24 Seconds
+
+H10 Server
+Sent=58050 KB Rate=19.350000 Mbps
+Time Elapsed: 24 Seconds

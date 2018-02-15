@@ -2,11 +2,11 @@ Create Topology:
 command: sudo python assignment1_topology.py
 
 1) 
-      L1: s1 ping -c 20 s2 >> throughput_L1.txt
-      L2: s2 ping -c 20 s3 >> throughput_L2.txt
-      L3: s2 ping -c 20 s4 >> throughput_L3.txt
-      L4: s3 ping -c 20 s5 >> throughput_L4.txt
-      L5: s5 ping -c 20 s6 >> throughput_L5.txt
+      L1: s1 ping -c 20 s2 >> latency_L1.txt
+      L2: s2 ping -c 20 s3 >> latency_L2.txt
+      L3: s2 ping -c 20 s4 >> latency_L3.txtc
+      L4: s3 ping -c 20 s5 >> latency_L4.txt
+      L5: s5 ping -c 20 s6 >> latency_L5.txt
 
 2)    Predicted throughput:
       Predicted latency:
