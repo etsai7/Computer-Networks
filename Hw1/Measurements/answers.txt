@@ -8,26 +8,46 @@ command: sudo python assignment1_topology.py
       L4: s3 ping -c 20 s5 >> latency_L4.txt
       L5: s5 ping -c 20 s6 >> latency_L5.txt
 
-2)    Predicted throughput:
-      Predicted latency:
-      Actual throughput:
-      Actual latency:
-      Explanation of results:
+2)    Predicted throughput: 18.00 Mbps
+      Predicted latency: 60 ms or 120 ms RTT
+      Actual throughput: 19.35000 Mbps
+      Actual latency: 122.593 ms
+      Explanation of results: Latency should be 
+      the combined delays of all the links. Throughput 
+      is limited by the smallest bandwidth which is 20 
+      bytes on link 1.
 
-3.1)  Predicted throughput:
-      Predicted latency:
-      Actual throughput:
-      Actual latency:
-      Explanation of results:
+3.1)  Predicted throughput: 9.00 Mbps
+      Predicted latency: 60 ms or 120 ms RTT
+      Actual throughput: 13.882400 Mbps and 10.611840 Mbps
+      Actual latency: 122.249 ms RTT
+      Explanation of results: Latency should not change from 
+      Q2 as the medium upon which the data is trasnferred is 
+      still the same. However, throughput should  be halved, 
+      as the pairs of hosts must now share the same bandwidth. 
+      One may have a higher throughput because starting it first
+      may have given it a head start and more resource allocation. 
+      The second started pair has a closer throughput to the 
+      prediction at 10.611840 Mbps
 
-3.2)  Predicted throughput:
-      Predicted latency:
-      Actual throughput:
-      Actual latency:
-      Explanation of results:
-
-4)    Predicted throughput:
-      Predicted latency:
-      Actual throughput:
-      Actual latency:
-      Explanation of results:
+3.2)  Predicted throughput: 6 Mbps
+      Predicted latency: 60 msor 120 ms RTT
+      Actual throughput: 14.540267 Mbps and 6.416296 Mbps and 6.171077 Mbps
+      Actual latency: 122.573 ms RTT
+      Explanation of results: Latency should not change as medium of 
+      transmission has not changed. The 2 second delays may come from
+      processes and distance the transmission needs to travel. As for 
+      throughput, the last 2 pairs were close to the predicted throughput 
+      of roughly 6 Mbps. However the first had a throughput of 14.5 Mbps 
+      which was started first. Not quite sure why, but maybe starting it 
+      first gives it resource priorities and more time to transmit. Otherwise, 
+      the bandwidth should be divided equally amongst all three pairs.
+      
+4)    Predicted throughput: 9.00 Mbps for both since they share 2 links
+      Predicted latency: h3 and h8 at 15 ms or 30 ms RTT and h1 and h10 at 60 ms or 120 ms RTT
+      Actual throughput: h3/h8 at 16.138462 Mbps and h1/h10 at 7.713600 Mbps
+      Actual latency: h3/h8: 31.320 and h1/h10: 122.082
+      Explanation of results: Latency should just be the combination of delays 
+      on all the links as the medium does not change. Transfer rate remains the 
+      same. Output h3/h8 has higher output due to shorter distance travelled and 
+      hence the higher Mbps.
