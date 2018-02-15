@@ -76,7 +76,7 @@ To transfer files to/from your VM you should use the `scp` (secure copy) command
 
 Some topologies are provided [here](https://github.com/etsai7/Computer-Networks/tree/master/Hw1/Topologies)
 
-To run Mininet with the provided topology, run the Python script `assignment1_topology.py` using sudo:
+To run Mininet with the provided topology, run the Python script `Original_Topology.py` using sudo:
 
 `sudo python Original_Topology.py`
 
