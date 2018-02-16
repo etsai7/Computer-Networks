@@ -8,16 +8,16 @@ command: sudo python assignment1_topology.py
       L4: s3 ping -c 20 s5 >> latency_L4.txt
       L5: s5 ping -c 20 s6 >> latency_L5.txt
 
-2)    Predicted throughput: 18.00 Mbps
+2)    Predicted throughput: 20.00 Mbps
       Predicted latency: 60 ms or 120 ms RTT
       Actual throughput: 19.35000 Mbps
       Actual latency: 122.593 ms
       Explanation of results: Latency should be 
       the combined delays of all the links. Throughput 
       is limited by the smallest bandwidth which is 20 
-      bytes on link 1.
+      Mbps on link 1.
 
-3.1)  Predicted throughput: 9.00 Mbps
+3.1)  Predicted throughput: 10.00 Mbps
       Predicted latency: 60 ms or 120 ms RTT
       Actual throughput: 13.882400 Mbps and 10.611840 Mbps
       Actual latency: 122.249 ms RTT
@@ -30,7 +30,7 @@ command: sudo python assignment1_topology.py
       The second started pair has a closer throughput to the 
       prediction at 10.611840 Mbps
 
-3.2)  Predicted throughput: 6 Mbps
+3.2)  Predicted throughput: 6.667 Mbps
       Predicted latency: 60 msor 120 ms RTT
       Actual throughput: 14.540267 Mbps and 6.416296 Mbps and 6.171077 Mbps
       Actual latency: 122.573 ms RTT
