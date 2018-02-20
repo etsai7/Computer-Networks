@@ -17,18 +17,18 @@ static int   DNS_Port;
 static char  *www_ip;
 
 /* Socket Setup */
-int sock;
-struct sockaddr_in sock_address;
+int sock_client;
+struct sock_client_address;
 
 /* Methods */
 void Usage (int argc, char *argv[]);
+void Connect_Client();
+void Connect_Server());
 
 int main( int argc, char *argv[] ){
 	www_ip = "video.cse.umich.edu";
 
-	printf("\n");
 	Usage(argc, argv);
-	printf("\n");
 
 	return 0;
 }
@@ -47,12 +47,42 @@ void Usage(int argc, char *argv[]){
 		www_ip = argv[6];
 	}
 
-	printf("--------------------MiProxy Information--------------------\n");
+	printf("\n--------------------MiProxy Information--------------------\n");
 	printf("Log Path:     %s\n", Log);
 	printf("Alpha:        %f\n", Alpha);
 	printf("Listen Port:  %d\n", Listen_Port);
 	printf("DNS IP:       %s\n", DNS_IP);
 	printf("DNS Port:     %d\n", DNS_Port);
 	printf("www-ip:       %s\n", www_ip);
-	printf("----------------------------------------------------------- ");
+	printf("-----------------------------------------------------------\n\n ");
 }
+
+void Connect_Client(){
+/* Socket Creation */
+    sock_client = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock_client < 0){
+        perror("Client Connection: socket setup failed\n");
+        exit(1);
+    }
+    printf("\nClient Socket: %d\n", sock_client);
+
+    /* Attaching socket to port */
+    sock_client_address.sin_family = AF_INET;
+    sock_client_address.sin_addr.s_addr = inet_addr(INADDR_ANY);/* INADDR_ANY; */
+    sock_client_address.sin_port = htons( Listen_Port );
+
+    /* Binding socket */
+    if (bind(sock_client, (struct sockaddr *)&sock_client_address, sizeof(sock_client_address))<0)
+    {
+        perror("Client Socket Bind Failed");
+        exit(1);
+    }
+
+    /* Listen for incoming clients */
+    if (listen(sock_client, 8)<0)
+    {
+        perror("Client Socket Listen Failed");
+        exit(1);
+    } 
+}
+
