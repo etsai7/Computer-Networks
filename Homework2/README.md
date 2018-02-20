@@ -2,10 +2,10 @@
 
 ## Overview
 
-Video traffic dominates the Internet. In this project, you will explore how video content distribution networks (CDNs) work. In particular, you will implement adaptive bitrate selection, DNS load balancing, and an HTTP proxy server to stream video at high bit rates from the closest server to a given client.
+Video traffic dominates the Internet. In this project, we will explore how video content distribution networks (CDNs) work. In particular, this project will implement adaptive bitrate selection, DNS load balancing, and an HTTP proxy server to stream video at high bit rates from the closest server to a given client.
 
 ### Video CDNs in the Real World
-The figure above depicts a high level view of what this system looks like in the real world. Clients trying to stream a video first issue a DNS query to resolve the service's domain name to an IP address for one of the CDN's content servers. The CDN's authoritative DNS server selects the “best” content server for each particular client based on
+Clients trying to stream a video first issue a DNS query to resolve the service's domain name to an IP address for one of the CDN's content servers. The CDN's authoritative DNS server selects the “best” content server for each particular client based on
 (1) the client's IP address (from which it learns the client's geographic location) and
 (2) current load on the content servers (which the servers periodically report to the DNS server).
 
