@@ -18,12 +18,12 @@ static char  *www_ip;
 
 /* Socket Setup */
 int sock_client;
-struct sock_client_address;
+struct sockaddr_in sock_client_address;
 
 /* Methods */
 void Usage (int argc, char *argv[]);
 void Connect_Client();
-void Connect_Server());
+void Connect_Server();
 
 int main( int argc, char *argv[] ){
 	www_ip = "video.cse.umich.edu";
