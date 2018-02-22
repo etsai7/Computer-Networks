@@ -17,14 +17,16 @@ static int   DNS_Port;
 static char  *www_ip;
 
 /* Socket Setup */
-int sock_client;
+int sock_client, sock_new_client;
 struct sockaddr_in sock_client_address;
+int sock_address_size = sizeof(sock_address);
 
 /* Methods */
 void Usage (int argc, char *argv[]);
 void Connect_Client();
 void Connect_Server();
 
+/* ./miProxy test.txt .5 1025 0.0.0.0 2555 */
 int main( int argc, char *argv[] ){
 	www_ip = "video.cse.umich.edu";
 
@@ -84,5 +86,14 @@ void Connect_Client(){
         perror("Client Socket Listen Failed");
         exit(1);
     } 
+
+    sock_new_client = accept(sock_client, (struct sockaddr *)&sock_client_address, (socklen_t*)&sock_address_size);
+    if (sock_new_client<0)
+    {
+        perror("Accept Failed");
+        exit(EXIT_FAILURE);
+    } else {
+        printf("Accepted Client\n");
+    }
 }
 
