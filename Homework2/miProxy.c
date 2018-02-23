@@ -19,7 +19,7 @@ static char  *www_ip;
 /* Socket Setup */
 int sock_client, sock_new_client;
 struct sockaddr_in sock_client_address;
-int sock_address_size = sizeof(sock_address);
+int sock_address_size = sizeof(sock_client_address);
 
 /* Methods */
 void Usage (int argc, char *argv[]);
