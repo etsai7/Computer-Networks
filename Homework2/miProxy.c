@@ -21,6 +21,9 @@ int sock_client, sock_new_client;
 struct sockaddr_in sock_client_address;
 int sock_address_size = sizeof(sock_client_address);
 
+/* Data */
+char buffer[1000];
+
 /* Methods */
 void Usage (int argc, char *argv[]);
 void Connect_Client();
@@ -33,6 +36,11 @@ int main( int argc, char *argv[] ){
 	Usage(argc, argv);
 
     Connect_Client();
+
+    while(1){
+        ssize_t nb = recv( sock_new_client, &buffer, 1000, 0);
+        printf("\nData Received: %s of size %lu\n ", buffer, nb);
+    }
 
 	return 0;
 }
@@ -68,16 +76,13 @@ void Connect_Client(){
         perror("Client Connection: socket setup failed\n");
         exit(1);
     }
-    printf("\nClient Socket: %d\n", sock_client);
+
+    printf("\nMiProxy socket to accept: %d\n", sock_client);
 
     /* Attaching socket to port */
     sock_client_address.sin_family = AF_INET;
-    printf("Ok1\n");
     sock_client_address.sin_addr.s_addr = INADDR_ANY;/* INADDR_ANY; */
-    printf("Ok2\n");
     sock_client_address.sin_port = htons( Listen_Port );
-
-    printf("Successfully attached socket to ports\n");
 
     /* Binding socket */
     if (bind(sock_client, (struct sockaddr *)&sock_client_address, sizeof(sock_client_address))<0)
@@ -85,7 +90,6 @@ void Connect_Client(){
         perror("Client Socket Bind Failed");
         exit(1);
     }
-    printf("Socket binded\n");
 
     /* Listen for incoming clients */
     if (listen(sock_client, 8)<0)
@@ -94,17 +98,15 @@ void Connect_Client(){
         exit(1);
     } 
 
-    printf("Listened for incoming clients\n");
-
     sock_new_client = accept(sock_client, (struct sockaddr *)&sock_client_address, (socklen_t*)&sock_address_size);
     if (sock_new_client<0)
     {
         perror("Accept Failed");
         exit(EXIT_FAILURE);
     } else {
-        printf("Accepted Client\n");
+        printf("MiProxy socket for client: %d\n",sock_new_client );
     }
 
-    printf("At the end of the miProxy\n");
+    printf("At the end of the client -> proxy setup\n");
 }
 
