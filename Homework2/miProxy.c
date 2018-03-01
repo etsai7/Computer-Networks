@@ -22,7 +22,7 @@ struct sockaddr_in sock_client_address;
 int sock_address_size = sizeof(sock_client_address);
 
 /* Data */
-char buffer[1000];
+char buffer[1000], method[300], file_location[300], http_version[300];
 
 /* Methods */
 void Usage (int argc, char *argv[]);
@@ -38,8 +38,19 @@ int main( int argc, char *argv[] ){
     Connect_Client();
 
     while(1){
+        // Clear out the buffer and the separate char arrays
+        memset(&buffer[0], 0, sizeof(buffer));
+        memset(&method[0], 0, sizeof(method));
+        memset(&file_location[0], 0, sizeof(file_location));
+        memset(&http_version[0], 0, sizeof(http_version));
+
         ssize_t nb = recv( sock_new_client, &buffer, 1000, 0);
         printf("\nData Received: %s of size %lu\n ", buffer, nb);
+
+        sscanf(buffer,"%s %s %s",method,file_location,http_version);
+        printf("Method:        %s\n", method);
+        printf("File Location: %s\n", file_location);
+        printf("HTTP Version:  %s\n", http_version);
     }
 
 	return 0;
