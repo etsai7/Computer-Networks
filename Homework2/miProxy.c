@@ -36,8 +36,8 @@ char buffer[1000], method[300], file_location[300], http_version[300];
 
 /* Methods */
 void Usage (int argc, char *argv[]);
-void Connect_Client();
-void Connect_Server();
+void Connect_ClientBrowser_To_MiProxy();
+void Connect_MiProxy_To_Apache();
 
 /* ./miProxy test.txt .5 1025 0.0.0.0 2555 */
 int main( int argc, char *argv[] ){
@@ -47,10 +47,10 @@ int main( int argc, char *argv[] ){
 	Usage(argc, argv);
 
     /* 2. Connect Browser Client to miProxy*/
-    Connect_Client();
+    Connect_ClientBrowser_To_MiProxy();
 
     /* 3. Connect miProxy to Apache Server */
-    Connect_Server();
+    Connect_MiProxy_To_Apache();
 
     /* 4. Received GET requests from Browser Client*/
     while(1){
@@ -99,8 +99,8 @@ void Usage(int argc, char *argv[]){
 	printf("-----------------------------------------------------------\n\n ");
 }
 
-/* Connects Client to MiProxy*/
-void Connect_Client(){
+/* Connects Client to MiProxy. Acts as a Server*/
+void Connect_ClientBrowser_To_MiProxy(){
 /* Socket Creation */
     sock_client = socket(AF_INET, SOCK_STREAM, 0);
     if (sock_client < 0){
@@ -138,11 +138,11 @@ void Connect_Client(){
         printf("MiProxy socket for client: %d\n",sock_new_client );
     }
 
-    printf("At the end of the client -> proxy setup\n");
+    printf("----------END OF Browser Client -> Proxy setup----------\n");
 }
 
 /* Connects MiProxy to Server*/
-void Connect_Server(){
+void Connect_MiProxy_To_Apache(){
     sock_server = socket(AF_INET, SOCK_STREAM, 0);
     if (sock_server < 0){
         perror("Server: socket setup failed\n");
@@ -164,6 +164,8 @@ void Connect_Server(){
         perror("Fail to connect to server \n");
         exit(1);
     }
+
+    printf("----------END OF Proxy -> Apache setup----------\n");
 }
 
 // Use Select on miProxy
