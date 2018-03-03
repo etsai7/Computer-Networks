@@ -71,8 +71,9 @@ int main( int argc, char *argv[] ){
             Accept-Encoding: gzip, deflate
             Connection: keep-alive
         */
+        printf("\n---------- PART 1 Browser -> MiProxy----------\n");
         ssize_t nb = recv( sock_new_client, &buffer, 16000, 0);
-        printf("\nData Received: %sof size %lu\n ", buffer, nb);
+        printf("Data Received: %sof size %lu\n", buffer, nb);
 
         sscanf(buffer,"%s %s %s",method,file_location,http_version);
 
@@ -81,23 +82,29 @@ int main( int argc, char *argv[] ){
         printf("File Location: %s size: %lu\n", file_location, strlen(file_location));
         printf("HTTP Version:  %s size: %lu\n", http_version, strlen(http_version));
 
+        printf("\n----------Data Transmission Portions----------\n");
         /* Pass along browser request to server*/
-        printf("1. Passing along browser request to server\n");
-        printf("1.a Buffer Data:\n %s", buffer);
-        ssize_t x = send(sock_server , &buffer , sizeof(buffer) , 0 );
+        printf("\n---------- PART 2 MiProxy -> Apache Server----------\n");
+        printf("1. Buffer Data:\n\t%s", buffer);
+        ssize_t x = send(sock_server , &buffer , nb , 0 );
         printf("2. Passed along browser request to server: %lu bytes\n", x);
-
+        
+        printf("\n---------- PART 3 Apache Server -> MiProxy----------\n");
         /* Receive server material*/
         printf("3. Receiving server material\n");
         ssize_t y = recv( sock_server, &buffer, 16000,0);
         printf("4. Received server material: %lu bytes\n", y);
-        printf("4.a Buffer Data:\n %s", buffer);
+        printf("4.a Buffer Data:\n\t%s", buffer);
 
+        printf("---------- PART 3 MiProxy -> Browser----------\n");
         /* Send off server material to Browser Client */
         printf("5.Sending off server material to Browser Client\n");
-        printf("5.a Buffer Data:\n %s", buffer);
-        ssize_t z = send(sock_client , &buffer , sizeof(buffer) , 0 );
-        printf("6.Sent off server material to Browser Client: %lu bytes\n",z);
+        printf("5.a Buffer Data:\n\t%s", buffer);
+        ssize_t z = send(sock_new_client , &buffer , y , 0 );
+        printf("6.Sent off server material to Browser Client: %lu bytes on Browser Socket: %d\n",z, sock_new_client);
+    
+        /* Temporary termination return*/
+        /* return 0; */
     }
 
 	return 0;
@@ -166,7 +173,7 @@ void Connect_ClientBrowser_To_MiProxy(){
         printf("MiProxy socket for client: %d\n",sock_new_client );
     }
 
-    printf("----------END OF Browser Client -> Proxy setup----------\n");
+    printf("----------END OF Browser Client -> Proxy Setup----------\n");
 }
 
 /* Connects MiProxy to Server*/
@@ -193,7 +200,7 @@ void Connect_MiProxy_To_Apache(){
         exit(1);
     }
 
-    printf("----------END OF Proxy -> Apache setup----------\n");
+    printf("----------END OF Proxy -> Apache Setup----------\n");
 }
 
 /* Use Select on miProxy */
