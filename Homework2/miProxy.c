@@ -31,7 +31,7 @@ struct sockaddr_in sock_server_address;
 int    sock_address_server_size = sizeof(sock_server_address);
 
 /* Data */
-char buffer[1000], method[300], file_location[300], http_version[300];
+char buffer[16000], method[300], file_location[300], http_version[300];
 
 
 /* Methods */
@@ -55,14 +55,24 @@ int main( int argc, char *argv[] ){
     /* 4. Received GET requests from Browser Client*/
     while(1){
         /* Clear out the buffer and the separate char arrays */
+        printf("Transmitting Data\n");
+
         memset(&buffer[0], 0, sizeof(buffer));
         memset(&method[0], 0, sizeof(method));
         memset(&file_location[0], 0, sizeof(file_location));
         memset(&http_version[0], 0, sizeof(http_version));
 
-
-        ssize_t nb = recv( sock_new_client, &buffer, 1000, 0);
-        printf("\nData Received: %s of size %lu\n ", buffer, nb);
+        /*GET Request from Browser: 
+            Data Received: GET / HTTP/1.1
+            Host: 10.0.0.2:1025
+            User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:44.0) Gecko/20100101 Firefox/44.0
+            Accept: text/html,application/xhtml+xml,application/xml;q=0.9,asterisk(*)/*;q=0.8
+            Accept-Language: en-US,en;q=0.5
+            Accept-Encoding: gzip, deflate
+            Connection: keep-alive
+        */
+        ssize_t nb = recv( sock_new_client, &buffer, 16000, 0);
+        printf("\nData Received: %sof size %lu\n ", buffer, nb);
 
         sscanf(buffer,"%s %s %s",method,file_location,http_version);
 
@@ -70,6 +80,21 @@ int main( int argc, char *argv[] ){
         printf("Method:        %s size: %lu\n", method, strlen(method));
         printf("File Location: %s size: %lu\n", file_location, strlen(file_location));
         printf("HTTP Version:  %s size: %lu\n", http_version, strlen(http_version));
+
+        /* Pass along browser request to server*/
+        printf("1. Passing along browser request to server\n");
+        ssize_t x = send(sock_server , &buffer , sizeof(buffer) , 0 );
+        printf("2. Passed along browser request to server: %lu\n", x);
+
+        /* Receive server material*/
+        printf("3. Receiving server material\n");
+        ssize_t y = recv( sock_server, &buffer, 16000,0);
+        printf("4. Received server material: %lu\n", y);
+
+        /* Send off server material to Browser Client */
+        printf("5.Sending off server material to Browser Client\n");
+        ssize_t z = send(sock_client , &buffer , sizeof(buffer) , 0 );
+        printf("6.Sent off server material to Browser Client: %lu\n",z);
     }
 
 	return 0;
