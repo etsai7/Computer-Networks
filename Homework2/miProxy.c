@@ -99,7 +99,7 @@ int main( int argc, char *argv[] ){
         printf("---------- PART 3 MiProxy -> Browser----------\n");
         /* Send off server material to Browser Client */
         printf("5.Sending off server material to Browser Client\n");
-        printf("5.a Buffer Data:\n\t%s", buffer);
+        printf("5.a Buffer Data:\n\t%s\n", buffer);
         ssize_t z = send(sock_new_client , &buffer , y , 0 );
         printf("6.Sent off server material to Browser Client: %lu bytes on Browser Socket: %d\n",z, sock_new_client);
     
