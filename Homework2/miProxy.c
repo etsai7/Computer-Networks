@@ -83,18 +83,21 @@ int main( int argc, char *argv[] ){
 
         /* Pass along browser request to server*/
         printf("1. Passing along browser request to server\n");
+        printf("1.a Buffer Data:\n %s", buffer);
         ssize_t x = send(sock_server , &buffer , sizeof(buffer) , 0 );
-        printf("2. Passed along browser request to server: %lu\n", x);
+        printf("2. Passed along browser request to server: %lu bytes\n", x);
 
         /* Receive server material*/
         printf("3. Receiving server material\n");
         ssize_t y = recv( sock_server, &buffer, 16000,0);
-        printf("4. Received server material: %lu\n", y);
+        printf("4. Received server material: %lu bytes\n", y);
+        printf("4.a Buffer Data:\n %s", buffer);
 
         /* Send off server material to Browser Client */
         printf("5.Sending off server material to Browser Client\n");
+        printf("5.a Buffer Data:\n %s", buffer);
         ssize_t z = send(sock_client , &buffer , sizeof(buffer) , 0 );
-        printf("6.Sent off server material to Browser Client: %lu\n",z);
+        printf("6.Sent off server material to Browser Client: %lu bytes\n",z);
     }
 
 	return 0;
@@ -193,4 +196,4 @@ void Connect_MiProxy_To_Apache(){
     printf("----------END OF Proxy -> Apache setup----------\n");
 }
 
-// Use Select on miProxy
+/* Use Select on miProxy */
