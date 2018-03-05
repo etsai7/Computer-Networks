@@ -53,7 +53,8 @@ int main( int argc, char *argv[] ){
     Connect_MiProxy_To_Apache();
 
     /* 4. Received GET requests from Browser Client*/
-    while(1){
+    int i;
+    while(1)/*for(i = 0; i < 1; i++)*/{
         /* Clear out the buffer and the separate char arrays */
         printf("Transmitting Data\n");
 
@@ -89,20 +90,24 @@ int main( int argc, char *argv[] ){
         ssize_t x = send(sock_server , &buffer , nb , 0 );
         printf("2. Passed along browser request to server: %lu bytes\n", x);
         
-        printf("\n---------- PART 3 Apache Server -> MiProxy----------\n");
-        /* Receive server material*/
-        printf("3. Receiving server material\n");
-        ssize_t y = recv( sock_server, &buffer, 16000,0);
-        printf("4. Received server material: %lu bytes\n", y);
-        printf("4.a Buffer Data:\n\t%s", buffer);
+         int j = 0;
+         ssize_t y = 16000;
+        while(y == 16000){
+            printf("\n---------- PART 3 Apache Server -> MiProxy----------\n");
+            /* Receive server material*/
+            printf("3. Receiving server material\n");
+            y = recv( sock_server, &buffer, 16000,0);
+            printf("4. Received server material: %lu bytes\n", y);
+            printf("4.a Buffer Data:\n\t%s", buffer);
 
-        printf("---------- PART 3 MiProxy -> Browser----------\n");
-        /* Send off server material to Browser Client */
-        printf("5.Sending off server material to Browser Client\n");
-        printf("5.a Buffer Data:\n\t%s\n", buffer);
-        ssize_t z = send(sock_new_client , &buffer , y , 0 );
-        printf("6.Sent off server material to Browser Client: %lu bytes on Browser Socket: %d\n",z, sock_new_client);
-    
+            printf("---------- PART 3 MiProxy -> Browser----------\n");
+            /* Send off server material to Browser Client */
+            printf("5.Sending off server material to Browser Client\n");
+            printf("5.a Buffer Data:\n\t%s\n", buffer);
+            ssize_t z = send(sock_new_client , &buffer , y , 0 );
+            printf("6.Sent off server material to Browser Client: %lu bytes on Browser Socket: %d\n",z, sock_new_client);
+            j++;
+        }
         /* Temporary termination return*/
         /* return 0; */
     }
