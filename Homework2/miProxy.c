@@ -11,6 +11,8 @@
 
 #include <errno.h>
 
+#define MAX_BUFFER 16033
+
 static char  *Log;
 static float Alpha;
 static int   Listen_Port;
@@ -31,17 +33,40 @@ struct sockaddr_in sock_server_address;
 int    sock_address_server_size = sizeof(sock_server_address);
 
 /* Data */
-char buffer[16000], method[300], file_location[300], http_version[300];
+char buffer[MAX_BUFFER], method[300], file_location[300], http_version[300];
+int bitrates[4];
+ssize_t nb;
+ssize_t y = MAX_BUFFER;
 
+/* ----------Methods---------- */
 
-/* Methods */
+    /* Setup */
 void Usage (int argc, char *argv[]);
 void Connect_ClientBrowser_To_MiProxy();
 void Connect_MiProxy_To_Apache();
 
+    /* Send and Receive */
+void MiProxy_to_Server();
+int  Server_to_MiProxy();
+void MiProxy_to_Browser();
+
+    /* f4m file */
+int Check_If_f4m_File();
+void Handle_f4m_file();
+void Send_f4m_File();
+
+    /* Video Chunks */
+int Check_If_Vid_Segments();
+void Parse_Bit_Rates(char * xmlData);
+
+    /* Initial Files*/
+void Send_Initial_Files();
+/* --------------------------- */
+
 /* ./miProxy test.txt .5 1025 0.0.0.0 2555 */
 int main( int argc, char *argv[] ){
 	www_ip = "video.cse.umich.edu";
+
 
     /* 1. Assign User Arguments */
 	Usage(argc, argv);
@@ -73,15 +98,29 @@ int main( int argc, char *argv[] ){
             Connection: keep-alive
         */
         printf("\n---------- PART 1 Browser -> MiProxy----------\n");
-        ssize_t nb = recv( sock_new_client, &buffer, 16000, 0);
-        printf("Data Received: %sof size %lu\n", buffer, nb);
+        nb = recv( sock_new_client, &buffer, MAX_BUFFER, 0);
+        printf("Data Received: %s\nof size %lu\n", buffer, nb);
 
+        /* Split "GET /StrobeMediaPlayback.swf HTTP/1.1" to three char arrays*/
         sscanf(buffer,"%s %s %s",method,file_location,http_version);
+        if(Check_If_f4m_File()){
+            printf("Found an f4m file Request\n");
+            Handle_f4m_file();
+            return;
+        } else if (Check_If_Vid_Segments()){
+            printf("Found a video file Request\n");
+
+        } else {
+            printf("Found a initial file Request\n");
+            Send_Initial_Files();
+        }
+
 
         /* Use strlen to find actual length, not size of string*/
-        printf("Method:        %s size: %lu\n", method, strlen(method));
+        /*printf("Method:        %s size: %lu\n", method, strlen(method));
         printf("File Location: %s size: %lu\n", file_location, strlen(file_location));
         printf("HTTP Version:  %s size: %lu\n", http_version, strlen(http_version));
+        */
 
         printf("\n----------Data Transmission Portions----------\n");
         /* Pass along browser request to server*/
@@ -90,13 +129,13 @@ int main( int argc, char *argv[] ){
         ssize_t x = send(sock_server , &buffer , nb , 0 );
         printf("2. Passed along browser request to server: %lu bytes\n", x);
         
-         int j = 0;
-         ssize_t y = 16000;
-        while(y == 16000){
+        int j = 0;
+        
+        while(y == MAX_BUFFER){
             printf("\n---------- PART 3 Apache Server -> MiProxy----------\n");
             /* Receive server material*/
             printf("3. Receiving server material\n");
-            y = recv( sock_server, &buffer, 16000,0);
+            y = recv( sock_server, &buffer, MAX_BUFFER,0);
             printf("4. Received server material: %lu bytes\n", y);
             printf("4.a Buffer Data:\n\t%s", buffer);
 
@@ -208,4 +247,146 @@ void Connect_MiProxy_To_Apache(){
     printf("----------END OF Proxy -> Apache Setup----------\n");
 }
 
+void MiProxy_to_Server(){
+    printf("\n---------- PART 2 MiProxy -> Apache Server----------\n");
+    printf("1. Buffer Data:\n%s", buffer);
+    ssize_t x = send(sock_server , &buffer , nb , 0 );
+    printf("2. Passed along browser request to server: %lu bytes\n", x);
+    
+}
+
+int Server_to_MiProxy(){
+    printf("\n---------- PART 3 Apache Server -> MiProxy----------\n");
+    /* Receive server material*/
+    printf("3. Receiving server material\n");
+    y = recv( sock_server, &buffer, MAX_BUFFER,0);
+    printf("4. Received server material: %lu bytes\n", y);
+   /* printf("4.a Buffer Data:\n\t%s", buffer);*/
+    return y;
+}
+
+/*
+* Checks if the file requested  is a f4m file
+* @return 1 if found 0 if not
+*/
+int Check_If_f4m_File(){
+    char *found = NULL;
+    found =  strstr(file_location,".f4m");
+
+    if(found == NULL){
+        return 0;
+    }
+    return 1;
+}
+
+/*
+* Handles the parsing and transmission of f4m (xml) file
+*/
+void Handle_f4m_file(){
+    char f4mGetbuffer[MAX_BUFFER];
+    memcpy(f4mGetbuffer, buffer, sizeof(buffer));
+    /*printf("f4m Buffer:\n%s",f4mGetbuffer);*/
+
+    MiProxy_to_Server();
+    Server_to_MiProxy();
+
+    /* Look for the xml file data from response*/
+    char *data;
+    data = strstr(buffer, "<?xml");
+
+    Parse_Bit_Rates(data);
+
+    int j;
+    for(j=0;j<4;j++){
+        printf("Bitrate: %d\n", bitrates[j]);
+    }
+
+    /* Editing the request to have no bitrates f4m*/
+    char file_location_substring[300];
+    memset(&buffer[0], 0, sizeof(buffer));
+    strcpy(buffer, method);
+    strcat(buffer, " ");
+    memcpy(file_location_substring, file_location, strlen(file_location)-4);
+    strcat(buffer, file_location_substring);
+    strcat(buffer, "_nolist");
+    strcat(buffer, strstr(f4mGetbuffer,".f4m"));
+    printf("\nTrying to build up new Buffer: \n%s of size: %ld\n",buffer, strlen(buffer));
+
+    nb = strlen(buffer);
+    MiProxy_to_Server();
+    Server_to_MiProxy();
+
+    Send_f4m_File();
+}
+
+/*
+* Parses the xml file data for bitrates and stores in int bitrates []
+* @params xmlData the pointer to xml data from server response
+*/
+void Parse_Bit_Rates(char * xmlData){
+    /* Maybe should copy buffer instead of writing to file*/
+
+    FILE *file = fopen("f4mfile.txt", "w");
+    FILE *file2;
+    char * line = NULL;
+    ssize_t read;
+    size_t len = 0;
+    int i = 0;
+
+    int results = fputs(xmlData, file);
+    fclose(file);
+
+    file = fopen("f4mfile.txt", "r");
+
+
+    if (file) {
+        /* Read file line by line*/
+        while ((read = getline(&line, &len, file)) != -1) {
+            char*token;
+            long value;
+            char*ptr;
+            char str2[5];
+
+            if(strstr(line,"bitrate")){
+                printf("%s", line);
+                token = strtok(line, "=");
+                while( token != NULL ) {
+                    /*printf("Token is: %s\n", token);*/
+
+                    strncpy ( str2, token+1, strlen(token) - 2 );
+                    /*printf("str2: %s\n",str2);*/
+                    value = strtol(str2, &ptr,10);
+                    token = strtok(NULL, "=");
+                }
+                printf("Value Parsed: %ld\n", value);
+                bitrates[i] = value;
+                i++;
+            }
+        }
+    }
+    fclose(file);
+    remove("f4mfile.txt");
+}
+
+/*
+* Send the f4m file with no bitrates back to the browser
+*/
+void Send_f4m_File(){
+    printf("---------- PART 3 MiProxy -> Browser----------\n");
+    /* Send off server material to Browser Client */
+    printf("5.Sending f4m File to Browser Client\n");
+    printf("5.a Buffer Data:\n\t%s\n", buffer);
+    ssize_t z = send(sock_new_client , &buffer , y , 0 );
+    printf("6.Sent off server material to Browser Client: %lu bytes on Browser Socket: %d\n",z, sock_new_client);
+
+}
+
+int Check_If_Vid_Segments(){
+    return 0;
+}
+
+
+void Send_Initial_Files(){
+
+}
 /* Use Select on miProxy */
