@@ -34,6 +34,9 @@ int    sock_server, sock_new_server;
 struct sockaddr_in sock_server_address;
 int    sock_address_server_size = sizeof(sock_server_address);
 
+/* Forking/Parallel */
+int pid;
+
 /* Data */
 char buffer[MAX_BUFFER], method[300], file_location[300], http_version[300];
 int bitrates[4];
@@ -46,6 +49,7 @@ ssize_t y = MAX_BUFFER;
 void Usage (int argc, char *argv[]);
 void Connect_ClientBrowser_To_MiProxy();
 void Connect_MiProxy_To_Apache();
+void run();
 
     /* Send and Receive */
 void MiProxy_to_Server();
@@ -80,7 +84,42 @@ int main( int argc, char *argv[] ){
 
     /* 4. Received GET requests from Browser Client*/
     int i;
-    while(1)/*for(i = 0; i < 1; i++)*/{
+    while(1) /*for(i = 0; i < 3; i++)*/{
+
+        sock_new_client = accept(sock_client, (struct sockaddr *)&sock_client_address, (socklen_t*)&sock_address_size);
+        if (sock_new_client<0)
+        {
+            perror("Accept Failed");
+            exit(EXIT_FAILURE);
+        } else {
+            printf("MiProxy socket for client: %d\n",sock_new_client );
+        }
+
+        /* Create child process */
+        pid = fork();
+          
+        if (pid < 0) {
+           perror("ERROR on fork");
+           exit(1);
+        }
+        
+        if (pid == 0) {
+           /* This is the client process */
+           close(sock_client);
+           run(sock_new_client);
+           exit(0);
+        }
+        else {
+           close(sock_new_client);
+        }
+    }
+
+	return 0;
+}
+
+void run(){
+
+
         /* Clear out the buffer and the separate char arrays */
         printf("Transmitting Data\n");
 
@@ -100,7 +139,7 @@ int main( int argc, char *argv[] ){
         */
         printf("\n---------- PART 1 Browser -> MiProxy----------\n");
         nb = recv( sock_new_client, &buffer, MAX_BUFFER, 0);
-        printf("Data Received: %s\nof size %lu\n", buffer, nb);
+        printf("Request Received: \n%sof size %lu\n", buffer, nb);
 
         /* Split "GET /StrobeMediaPlayback.swf HTTP/1.1" to three char arrays*/
         sscanf(buffer,"%s %s %s",method,file_location,http_version);
@@ -109,52 +148,15 @@ int main( int argc, char *argv[] ){
             Handle_f4m_file();
         } else if (Check_If_Vid_Segments()){
             printf("Found a video file Request\n");
-            return 0;
-            MiProxy_to_Server();
-            Server_to_MiProxy();
+            Send_Initial_Files();
 
         } else {
             printf("Found a initial file Request\n");
             Send_Initial_Files();
         }
 
-
-        /* Use strlen to find actual length, not size of string*/
-        /*printf("Method:        %s size: %lu\n", method, strlen(method));
-        printf("File Location: %s size: %lu\n", file_location, strlen(file_location));
-        printf("HTTP Version:  %s size: %lu\n", http_version, strlen(http_version));
-        */
-
-        printf("\n----------Data Transmission Portions----------\n");
-        /* Pass along browser request to server*/
-        printf("\n---------- PART 2 MiProxy -> Apache Server----------\n");
-        printf("1. Buffer Data:\n\t%s", buffer);
-        ssize_t x = send(sock_server , &buffer , nb , 0 );
-        printf("2. Passed along browser request to server: %lu bytes\n", x);
+        /* Cut out code from here*/
         
-        int j = 0;
-        
-        while(y == MAX_BUFFER){
-            printf("\n---------- PART 3 Apache Server -> MiProxy----------\n");
-            /* Receive server material*/
-            printf("3. Receiving server material\n");
-            y = recv( sock_server, &buffer, MAX_BUFFER,0);
-            printf("4. Received server material: %lu bytes\n", y);
-            printf("4.a Buffer Data:\n\t%s", buffer);
-
-            printf("---------- PART 3 MiProxy -> Browser----------\n");
-            /* Send off server material to Browser Client */
-            printf("5.Sending off server material to Browser Client\n");
-            printf("5.a Buffer Data:\n\t%s\n", buffer);
-            ssize_t z = send(sock_new_client , &buffer , y , 0 );
-            printf("6.Sent off server material to Browser Client: %lu bytes on Browser Socket: %d\n",z, sock_new_client);
-            j++;
-        }
-        /* Temporary termination return*/
-        /* return 0; */
-    }
-
-	return 0;
 }
 
 void Usage(int argc, char *argv[]){
@@ -181,6 +183,7 @@ void Usage(int argc, char *argv[]){
 	printf("-----------------------------------------------------------\n\n ");
 }
 
+/*------------------Connection Setups------------------*/
 /* 
 * Connects Client to MiProxy. Acts as a Server
 */
@@ -213,14 +216,14 @@ void Connect_ClientBrowser_To_MiProxy(){
         exit(1);
     } 
 
-    sock_new_client = accept(sock_client, (struct sockaddr *)&sock_client_address, (socklen_t*)&sock_address_size);
+    /*sock_new_client = accept(sock_client, (struct sockaddr *)&sock_client_address, (socklen_t*)&sock_address_size);
     if (sock_new_client<0)
     {
         perror("Accept Failed");
         exit(EXIT_FAILURE);
     } else {
         printf("MiProxy socket for client: %d\n",sock_new_client );
-    }
+    }*/
 
     printf("----------END OF Browser Client -> Proxy Setup----------\n");
 }
@@ -254,6 +257,7 @@ void Connect_MiProxy_To_Apache(){
     printf("----------END OF Proxy -> Apache Setup----------\n");
 }
 
+/*-------------------Data Transfers -------------------*/
 /* 
 * Transmits data from MiProxy to Apache server
 */
@@ -285,12 +289,14 @@ int Server_to_MiProxy(){
 void MiProxy_to_Browser(){
     printf("---------- PART 3 MiProxy -> Browser----------\n");
     /* Send off server material to Browser Client */
-    printf("5.Sending f4m File to Browser Client\n");
-    printf("5.a Buffer Data:\n\t%s\n", buffer);
+    printf("5.Sending File to Browser Client\n");
+    /*printf("5.a Buffer Data:\n\t%s\n", buffer);*/
     ssize_t z = send(sock_new_client , &buffer , y , 0 );
     printf("6.Sent off server material to Browser Client: %lu bytes on Browser Socket: %d\n",z, sock_new_client);
 }
 
+
+/*--------------------File Handling--------------------*/
 /*
 * Checks if the file requested  is a f4m file
 * @return 1 if found 0 if not
@@ -321,6 +327,8 @@ void Handle_f4m_file(){
     data = strstr(buffer, "<?xml");
 
     Parse_Bit_Rates(data);
+    /* Set T_cur */
+    T_cur = bitrates[0];
 
     int j;
     for(j=0;j<4;j++){
@@ -394,6 +402,10 @@ void Parse_Bit_Rates(char * xmlData){
     remove("f4mfile.txt");
 }
 
+/*
+* Determines if the file requested is a Video Segment
+* @return 1 if found 0 if not
+*/
 int Check_If_Vid_Segments(){
     char *found = NULL;
     found =  strstr(file_location,"Seg");
@@ -405,8 +417,14 @@ int Check_If_Vid_Segments(){
 /*T_cur = Alpha * T_new + (1 - Alpha) * T_cur;*/
 }
 
-
+/*
+* Handles large files that exceed buffer size by continuously transmitting
+*/
 void Send_Initial_Files(){
-
+    MiProxy_to_Server();
+    do{
+        Server_to_MiProxy();
+        MiProxy_to_Browser();
+    }while(y == MAX_BUFFER);
 }
 /* Use Select on miProxy */
