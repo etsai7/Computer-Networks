@@ -19,6 +19,8 @@ static int   Listen_Port;
 static char  *DNS_IP;
 static int   DNS_Port;
 static char  *www_ip;
+static float T_cur;
+static float T_new;
 
 static int Server_Port = 80;
 
@@ -51,12 +53,11 @@ int  Server_to_MiProxy();
 void MiProxy_to_Browser();
 
     /* f4m file */
-int Check_If_f4m_File();
+int  Check_If_f4m_File();
 void Handle_f4m_file();
-void Send_f4m_File();
 
     /* Video Chunks */
-int Check_If_Vid_Segments();
+int  Check_If_Vid_Segments();
 void Parse_Bit_Rates(char * xmlData);
 
     /* Initial Files*/
@@ -106,9 +107,11 @@ int main( int argc, char *argv[] ){
         if(Check_If_f4m_File()){
             printf("Found an f4m file Request\n");
             Handle_f4m_file();
-            return;
         } else if (Check_If_Vid_Segments()){
             printf("Found a video file Request\n");
+            return 0;
+            MiProxy_to_Server();
+            Server_to_MiProxy();
 
         } else {
             printf("Found a initial file Request\n");
@@ -178,9 +181,11 @@ void Usage(int argc, char *argv[]){
 	printf("-----------------------------------------------------------\n\n ");
 }
 
-/* Connects Client to MiProxy. Acts as a Server*/
+/* 
+* Connects Client to MiProxy. Acts as a Server
+*/
 void Connect_ClientBrowser_To_MiProxy(){
-/* Socket Creation */
+    /* Socket Creation */
     sock_client = socket(AF_INET, SOCK_STREAM, 0);
     if (sock_client < 0){
         perror("Client Connection: socket setup failed\n");
@@ -220,7 +225,9 @@ void Connect_ClientBrowser_To_MiProxy(){
     printf("----------END OF Browser Client -> Proxy Setup----------\n");
 }
 
-/* Connects MiProxy to Server*/
+/* 
+* Connects MiProxy to Server
+*/
 void Connect_MiProxy_To_Apache(){
     sock_server = socket(AF_INET, SOCK_STREAM, 0);
     if (sock_server < 0){
@@ -247,6 +254,9 @@ void Connect_MiProxy_To_Apache(){
     printf("----------END OF Proxy -> Apache Setup----------\n");
 }
 
+/* 
+* Transmits data from MiProxy to Apache server
+*/
 void MiProxy_to_Server(){
     printf("\n---------- PART 2 MiProxy -> Apache Server----------\n");
     printf("1. Buffer Data:\n%s", buffer);
@@ -255,6 +265,10 @@ void MiProxy_to_Server(){
     
 }
 
+/* 
+* Transmits data from Apache server to MiProxy
+* @return size in bytes received from server
+*/
 int Server_to_MiProxy(){
     printf("\n---------- PART 3 Apache Server -> MiProxy----------\n");
     /* Receive server material*/
@@ -263,6 +277,18 @@ int Server_to_MiProxy(){
     printf("4. Received server material: %lu bytes\n", y);
    /* printf("4.a Buffer Data:\n\t%s", buffer);*/
     return y;
+}
+
+/* 
+* Transmits data from MiProxy to Browser
+*/
+void MiProxy_to_Browser(){
+    printf("---------- PART 3 MiProxy -> Browser----------\n");
+    /* Send off server material to Browser Client */
+    printf("5.Sending f4m File to Browser Client\n");
+    printf("5.a Buffer Data:\n\t%s\n", buffer);
+    ssize_t z = send(sock_new_client , &buffer , y , 0 );
+    printf("6.Sent off server material to Browser Client: %lu bytes on Browser Socket: %d\n",z, sock_new_client);
 }
 
 /*
@@ -316,7 +342,7 @@ void Handle_f4m_file(){
     MiProxy_to_Server();
     Server_to_MiProxy();
 
-    Send_f4m_File();
+    MiProxy_to_Browser();
 }
 
 /*
@@ -368,21 +394,15 @@ void Parse_Bit_Rates(char * xmlData){
     remove("f4mfile.txt");
 }
 
-/*
-* Send the f4m file with no bitrates back to the browser
-*/
-void Send_f4m_File(){
-    printf("---------- PART 3 MiProxy -> Browser----------\n");
-    /* Send off server material to Browser Client */
-    printf("5.Sending f4m File to Browser Client\n");
-    printf("5.a Buffer Data:\n\t%s\n", buffer);
-    ssize_t z = send(sock_new_client , &buffer , y , 0 );
-    printf("6.Sent off server material to Browser Client: %lu bytes on Browser Socket: %d\n",z, sock_new_client);
-
-}
-
 int Check_If_Vid_Segments(){
-    return 0;
+    char *found = NULL;
+    found =  strstr(file_location,"Seg");
+
+    if(found == NULL){
+        return 0;
+    }
+    return 1;
+/*T_cur = Alpha * T_new + (1 - Alpha) * T_cur;*/
 }
 
 
