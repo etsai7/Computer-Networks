@@ -1,20 +1,13 @@
-# Video Streaming via CDN
+# Video Streaming Using Bitrate Adaptation
 
 ## Overview
 
-Video traffic dominates the Internet. In this project, we will explore how video content distribution networks (CDNs) work. In particular, this project will implement adaptive bitrate selection, DNS load balancing, and an HTTP proxy server to stream video at high bit rates from the closest server to a given client.
+Video traffic dominates the Internet. In this project, we will explore how video content distribution networks (CDNs) work. In particular, this project  implement an HTTP proxy server to stream video at high bit rates using adaptive bitrate selection process.
 
-### Video CDNs in the Real World
-Clients trying to stream a video first issue a DNS query to resolve the service's domain name to an IP address for one of the CDN's content servers. The CDN's authoritative DNS server selects the “best” content server for each particular client based on
-(1) the client's IP address (from which it learns the client's geographic location) and
-(2) current load on the content servers (which the servers periodically report to the DNS server).
-
-### Video CDN in this Project
-This implementation is a simplified version of a CDN. First, the entire system runs on one host and relies on mininet to run several processes with arbitrary IP addresses on one machine. Mininet will also allow you to assign arbitrary link characteristics (bandwidth and latency) to each pair of “end hosts” (processes).
 
 <img src="./Images/our-CDN.png" title="Video CDN in assignment 2" alt="" width="330" height="111"/>
 
-The gray-shaded components in the figure above are implemented
+The gray-shaded `Proxy` component in the figure above are implemented
 
 **Browser.** An off-the-shelf web browser (Firefox) will be used to play videos served by the CDN (via your proxy).
 
@@ -22,12 +15,9 @@ The gray-shaded components in the figure above are implemented
 
 **Web Server.** Video content will be served from an off-the-shelf web server (Apache). As with the proxy, multiple instances of Apache will be run on different IP addresses to simulate a CDN with several content servers.
 
-**DNS Server.** A simple DNS that supports only a small portion of actual DNS's functionality. The server will respond to each request with the “best” server for that particular client.
-
 To summarize, this project has the following components:
 
 * [Part 1](#part1): Bitrate Adaptation in HTTP Proxy
-* [Part 2](#part2): DNS Load Balancing
 
 [This VM](http://www.cs.jhu.edu/~hzhu/proj2.ova) has all the components needed to get started on the project. This VM includes mininet, Apache, and all the files we will be streaming in this project. Both the username and password for this VM are `proj2`. To start the Apache server, simply run the python script we provide by doing the following:
 
