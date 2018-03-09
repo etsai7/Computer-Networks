@@ -2,8 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <libxml/xmlreader.h>
-
 #include <sys/socket.h>
 #include <netinet/in.h> 
 #include <sys/select.h>
@@ -42,6 +40,10 @@ char buffer[MAX_BUFFER], method[300], file_location[300], http_version[300];
 int bitrates[4];
 ssize_t nb;
 ssize_t y = MAX_BUFFER;
+int totalBytes = 0;
+
+/* Time */
+struct timeval t_start, t_end, temp;
 
 /* ----------Methods---------- */
 
@@ -63,9 +65,10 @@ void Handle_f4m_file();
     /* Video Chunks */
 int  Check_If_Vid_Segments();
 void Parse_Bit_Rates(char * xmlData);
+void Modify_BitRate(int bitrate);
 
     /* Initial Files*/
-void Send_Initial_Files();
+void Send_Files();
 /* --------------------------- */
 
 /* ./miProxy test.txt .5 1025 0.0.0.0 2555 */
@@ -82,9 +85,9 @@ int main( int argc, char *argv[] ){
     /* 3. Connect miProxy to Apache Server */
     Connect_MiProxy_To_Apache();
 
-    /* 4. Received GET requests from Browser Client*/
+    /* 4. Parrallelize sockets to accept concurrent requests*/
     int i;
-    while(1) /*for(i = 0; i < 3; i++)*/{
+    while(1){
 
         sock_new_client = accept(sock_client, (struct sockaddr *)&sock_client_address, (socklen_t*)&sock_address_size);
         if (sock_new_client<0)
@@ -107,7 +110,7 @@ int main( int argc, char *argv[] ){
            /* This is the client process */
            close(sock_client);
            run(sock_new_client);
-           exit(0);
+           exit(1);
         }
         else {
            close(sock_new_client);
@@ -117,9 +120,10 @@ int main( int argc, char *argv[] ){
 	return 0;
 }
 
+/*
+* Send and receive requests and data
+*/
 void run(){
-
-
         /* Clear out the buffer and the separate char arrays */
         printf("Transmitting Data\n");
 
@@ -137,28 +141,45 @@ void run(){
             Accept-Encoding: gzip, deflate
             Connection: keep-alive
         */
+
         printf("\n---------- PART 1 Browser -> MiProxy----------\n");
         nb = recv( sock_new_client, &buffer, MAX_BUFFER, 0);
         printf("Request Received: \n%sof size %lu\n", buffer, nb);
+        totalBytes = totalBytes + nb;
+        if(nb == 0) exit(1);
+
+        /* Starting time of client request */
+        gettimeofday(&t_start, NULL);
 
         /* Split "GET /StrobeMediaPlayback.swf HTTP/1.1" to three char arrays*/
         sscanf(buffer,"%s %s %s",method,file_location,http_version);
+        
+        /* Handling GET Request */
         if(Check_If_f4m_File()){
             printf("Found an f4m file Request\n");
             Handle_f4m_file();
         } else if (Check_If_Vid_Segments()){
             printf("Found a video file Request\n");
-            Send_Initial_Files();
+            Modify_BitRate(500);
+            Send_Files();
 
         } else {
             printf("Found a initial file Request\n");
-            Send_Initial_Files();
+            Send_Files();
         }
+        double t1 = t_start.tv_sec+(t_start.tv_usec/1000000.0);
+        double t2 = t_end.tv_sec+(t_end.tv_usec/1000000.0);
 
-        /* Cut out code from here*/
-        
+        T_new = totalBytes / (t2-t1);       
+        T_cur = Alpha * T_new + (1 - Alpha) * T_cur;
+        totalBytes = 0;
+
+
 }
 
+/*
+* Setting command line arguments into global variables
+*/
 void Usage(int argc, char *argv[]){
 	if (argc < 6) {
 		perror("Not enough arguments\n");
@@ -216,14 +237,7 @@ void Connect_ClientBrowser_To_MiProxy(){
         exit(1);
     } 
 
-    /*sock_new_client = accept(sock_client, (struct sockaddr *)&sock_client_address, (socklen_t*)&sock_address_size);
-    if (sock_new_client<0)
-    {
-        perror("Accept Failed");
-        exit(EXIT_FAILURE);
-    } else {
-        printf("MiProxy socket for client: %d\n",sock_new_client );
-    }*/
+    /* miProxy will be accepting in an infinite while loop back in main*/
 
     printf("----------END OF Browser Client -> Proxy Setup----------\n");
 }
@@ -266,7 +280,7 @@ void MiProxy_to_Server(){
     printf("1. Buffer Data:\n%s", buffer);
     ssize_t x = send(sock_server , &buffer , nb , 0 );
     printf("2. Passed along browser request to server: %lu bytes\n", x);
-    
+    totalBytes = totalBytes + x;
 }
 
 /* 
@@ -280,6 +294,7 @@ int Server_to_MiProxy(){
     y = recv( sock_server, &buffer, MAX_BUFFER,0);
     printf("4. Received server material: %lu bytes\n", y);
    /* printf("4.a Buffer Data:\n\t%s", buffer);*/
+    totalBytes = totalBytes + y;
     return y;
 }
 
@@ -292,6 +307,7 @@ void MiProxy_to_Browser(){
     printf("5.Sending File to Browser Client\n");
     /*printf("5.a Buffer Data:\n\t%s\n", buffer);*/
     ssize_t z = send(sock_new_client , &buffer , y , 0 );
+    totalBytes = totalBytes + z;
     printf("6.Sent off server material to Browser Client: %lu bytes on Browser Socket: %d\n",z, sock_new_client);
 }
 
@@ -414,17 +430,40 @@ int Check_If_Vid_Segments(){
         return 0;
     }
     return 1;
-/*T_cur = Alpha * T_new + (1 - Alpha) * T_cur;*/
 }
 
 /*
 * Handles large files that exceed buffer size by continuously transmitting
 */
-void Send_Initial_Files(){
+void Send_Files(){
+    
     MiProxy_to_Server();
     do{
         Server_to_MiProxy();
         MiProxy_to_Browser();
     }while(y == MAX_BUFFER);
+
+    gettimeofday(&t_end, NULL);
 }
-/* Use Select on miProxy */
+
+void Modify_BitRate(int bitrate){
+    char BufferCopy[MAX_BUFFER];
+    char file_location_substring[300];
+
+    /* Clear out data from char arrays*/
+    memset(&BufferCopy[0], 0, sizeof(BufferCopy));
+    memset(&file_location_substring[0], 0, sizeof(file_location_substring));
+    memcpy(BufferCopy, buffer, sizeof(buffer));
+    memset(&buffer[0], 0, sizeof(buffer));
+
+    /* Convert integer to char array */
+    char num[10];
+    sprintf(num, "%d", bitrate);
+    memcpy(buffer, method, strlen(method));             /* GET   */
+    strcat(buffer, " ");                                /* " "   */
+    memcpy(file_location_substring, file_location, 5);  /* /vod/ */ 
+    strncat(buffer, file_location_substring, strlen(file_location_substring));
+    strncat(buffer, num, strlen(num));                  /* /vod/500 */
+    strcat(buffer, strstr(BufferCopy, "Seg"));
+    nb = strlen(buffer);
+}
