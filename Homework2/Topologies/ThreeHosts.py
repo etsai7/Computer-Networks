@@ -19,13 +19,14 @@ class AssignmentNetworks(Topo):
         
         s1 = self.addSwitch('s1')
         s2 = self.addSwitch('s2')
+        s3 = self.addSwitch('s3')
         
         self.addLink(h1, s1)
-        self.addLink(h1, s1, bw=20, delay='40ms')
+        self.addLink(h2, s2)
+        self.addLink(h3, s3)
 
-        self.addLink(h2, s1, bw=20, delay='40ms')
-        # self.addLink(h2, s2)
-        self.addLink(h3, s1, bw=20, delay='40ms')
+        self.addLink(s1, s2)
+        self.addLink(s2, s3)
         
 if __name__ == '__main__':
     setLogLevel( 'info' )
