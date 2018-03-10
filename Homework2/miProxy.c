@@ -56,6 +56,7 @@ void Handle_Video_Requests();
 void Stream();
 
     /* Send and Receive */
+void Browser_to_MiProxy();
 void MiProxy_to_Server();
 int  Server_to_MiProxy();
 void MiProxy_to_Browser();
@@ -70,8 +71,9 @@ void Parse_Bit_Rates(char * xmlData);
 int  ChooseBitRate(int br);
 void Modify_BitRate(int bitrate);
 
-    /* Initial Files*/
+    /* Helper Methods */
 void Send_Files();
+void Clear_Data();
 /* --------------------------- */
 
 /* ./miProxy test.txt .5 1025 0.0.0.0 2555 */
@@ -203,18 +205,12 @@ void Handle_Initial_Files(){
     }
 
     do{
-        memset(&buffer[0], 0, sizeof(buffer));
-        memset(&method[0], 0, sizeof(method));
-        memset(&file_location[0], 0, sizeof(file_location));
-        memset(&http_version[0], 0, sizeof(http_version));
+        Clear_Data();
 
         /* printf("\n---------- PART 1 Browser -> MiProxy----------\n");*/        
-        nb = recv( sock_new_client, &buffer, MAX_BUFFER, 0);
+        
         printf("1. Browser>>>>>Proxy-----Server\t Initial File Request Received: \n%sof size %lu\n", buffer, nb);
-        totalBytes = totalBytes + nb;
-        if(nb == 0) exit(1);
-        sscanf(buffer,"%s %s %s",method,file_location,http_version);
-
+        Browser_to_MiProxy();
 
         if(Check_If_f4m_File()){
             printf("Found an f4m file Request\n");
@@ -269,24 +265,12 @@ void Handle_Video_Requests(){
 */
 void Stream(){
         /* Clear out the buffer and the separate char arrays */
-        printf("Transmitting Data\n");
+        Clear_Data();
 
-        memset(&buffer[0], 0, sizeof(buffer));
-        memset(&method[0], 0, sizeof(method));
-        memset(&file_location[0], 0, sizeof(file_location));
-        memset(&http_version[0], 0, sizeof(http_version));
-
-        printf("\n---------- PART 1 Browser -> MiProxy----------\n");
-        nb = recv( sock_new_client, &buffer, MAX_BUFFER, 0);
         printf("1. Browser>>>>>Proxy-----Server\t Video Request Received: \n%sof size %lu\n", buffer, nb);
-        totalBytes = totalBytes + nb;
-        if(nb == 0) exit(1);
-
+        Browser_to_MiProxy();
         /* Starting time of client request */
         gettimeofday(&t_start, NULL);
-
-        /* Split "GET /StrobeMediaPlayback.swf HTTP/1.1" to three char arrays*/
-        sscanf(buffer,"%s %s %s",method,file_location,http_version);
         
         /* Handling GET Request */
         printf("Found a video file Request\n");
@@ -304,6 +288,16 @@ void Stream(){
 }
 
 /*-------------------Data Transfers -------------------*/
+/* 
+* Transmits data from MiProxy to Apache server
+*/
+void Browser_to_MiProxy(){
+    nb = recv( sock_new_client, &buffer, MAX_BUFFER, 0);
+    totalBytes = totalBytes + nb;
+    if(nb == 0) exit(1);
+    sscanf(buffer,"%s %s %s",method,file_location,http_version);
+}
+
 /* 
 * Transmits data from MiProxy to Apache server
 */
@@ -519,6 +513,13 @@ void Send_Files(){
 
     printf("-----File Completely Sent\n\n");
     gettimeofday(&t_end, NULL);
+}
+
+void Clear_Data(){
+    memset(&buffer[0], 0, sizeof(buffer));
+    memset(&method[0], 0, sizeof(method));
+    memset(&file_location[0], 0, sizeof(file_location));
+    memset(&http_version[0], 0, sizeof(http_version));
 }
 
 
