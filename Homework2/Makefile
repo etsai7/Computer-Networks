@@ -8,6 +8,7 @@ miProxy: 	miProxy.o
 
 clean:
 		rm -f *.o
+		rm -f miProxy
 
 %.o:	%.c
 		$(CC) $(CFLAGS) $*.c

@@ -21,6 +21,7 @@ static int T_cur;
 static int T_new;
 static int Server_Port = 80;
 
+char T_cur_string[10];
 char bf1[10];
 char bf2[10];
 int fd1[2];
@@ -252,6 +253,7 @@ void Handle_Video_Requests(){
 
         /* Create child process */
         pid = fork();
+        printf("Fork pid: %d\n", pid);
           
         if (pid < 0) {
            perror("ERROR on fork");
@@ -260,20 +262,29 @@ void Handle_Video_Requests(){
            /* This is the client process */
             printf(">>>>>>>>>>>>>>BACK TO Child<<<<<<<<<<<<<<<<<\n");
             close(sock_client);
- 
+            printf("Length of T_cur: %ld\n",  strlen(T_cur_string));
+            /*read(fd1[0], T_cur_string, strlen(T_cur_string));
+            printf("String of T_cur: %s\n",  T_cur_string);
+            T_cur = atoi(T_cur_string);
+            printf("Parsing T cur String: %d\n", T_cur);*/
             Stream();
-            read(fd1[0], bf1, 10);
-            write(fd2[1], bf1,10);
-            printf("Child bf1: %s\n", bf1);
+            printf("Finished streaming\n");
+            memset(&T_cur_string[0], 0, sizeof(T_cur_string));
+            sprintf(T_cur_string, "%d",T_cur);
+            printf("Child writing: %d\n",write(fd1[1], T_cur_string, strlen(T_cur_string)));
+
+            printf("Child T_cur_string: %s\n", T_cur_string);
             exit(1);
         }
         else {
             printf(">>>>>>>>>>>>>>BACK TO PARENT<<<<<<<<<<<<<<<<<\n");
 
-            write(fd1[1], buffer, 10);
+            read(fd1[0], T_cur_string, strlen(T_cur_string));
+            printf("Parent reading: %d\n",write(fd1[1], T_cur_string, strlen(T_cur_string)));
+            T_cur = atoi(T_cur_string);
+            /*write(fd1[1], T_cur_string, strlen(T_cur_string));*/
             /*printf("Parent Buffer:\n%s", buffer);*/
-            read(fd2[0],bf2, 10);
-            printf("Parent bf2: %s\n", bf2);
+            printf("Parent T_cur_string: %s\n", T_cur_string);
             close(sock_new_client);
         }
     }
@@ -386,7 +397,13 @@ void Handle_f4m_file(){
     Parse_Bit_Rates(data);
     /* Set T_cur */
     T_cur = bitrates[3];
+    sprintf(T_cur_string, "%d", T_cur);
+    printf("Writing to fd2[1]: %d,\n", write(fd2[1], T_cur_string, strlen(T_cur_string)));
+    printf("Writing to fd1[1]: %d,\n", write(fd1[1], T_cur_string, strlen(T_cur_string)));
 
+
+
+    printf("T_cur set to: %d kbps\n", T_cur);
     int j;
     for(j=0;j<4;j++){
         printf("Bitrate: %d\n", bitrates[j]);
