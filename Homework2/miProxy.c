@@ -9,7 +9,7 @@
 
 #include <errno.h>
 
-#define MAX_BUFFER 9697/*16033*/
+#define MAX_BUFFER /*9697*/16033
 
 static char  *Log;
 static float Alpha;
