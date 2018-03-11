@@ -19,8 +19,12 @@ static int   DNS_Port;
 static char  *www_ip;
 static int T_cur;
 static int T_new;
-
 static int Server_Port = 80;
+
+char bf1[10];
+char bf2[10];
+int fd1[2];
+int fd2[2];
 
 /* Socket Client Setup */
 int    sock_client, sock_new_client;
@@ -230,6 +234,12 @@ void Handle_Initial_Files(){
 }
 
 void Handle_Video_Requests(){
+
+    if(pipe(fd1) == -1 || pipe(fd2) == -1){
+        perror("Piping Failed");
+        exit(1);
+    }
+
     while(1){
         sock_new_client = accept(sock_client, (struct sockaddr *)&sock_client_address, (socklen_t*)&sock_address_size);
         if (sock_new_client<0)
@@ -246,16 +256,25 @@ void Handle_Video_Requests(){
         if (pid < 0) {
            perror("ERROR on fork");
            exit(1);
-        }
-        
-        if (pid == 0) {
+        } else if (pid == 0) {
            /* This is the client process */
-           close(sock_client);
-           Stream();
-           exit(1);
+            printf(">>>>>>>>>>>>>>BACK TO Child<<<<<<<<<<<<<<<<<\n");
+            close(sock_client);
+ 
+            Stream();
+            read(fd1[0], bf1, 10);
+            write(fd2[1], bf1,10);
+            printf("Child bf1: %s\n", bf1);
+            exit(1);
         }
         else {
-           close(sock_new_client);
+            printf(">>>>>>>>>>>>>>BACK TO PARENT<<<<<<<<<<<<<<<<<\n");
+
+            write(fd1[1], buffer, 10);
+            /*printf("Parent Buffer:\n%s", buffer);*/
+            read(fd2[0],bf2, 10);
+            printf("Parent bf2: %s\n", bf2);
+            close(sock_new_client);
         }
     }
 }
