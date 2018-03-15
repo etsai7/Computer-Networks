@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g -c -ansi
+CFLAGS = -g -c
 
 all: miProxy
 
