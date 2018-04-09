@@ -33,7 +33,7 @@ int pid;
 /* IP List */
 int numIPs;
 char * IPList [100];
-char * PortList [100];
+int  PortList [100];
 
 /* Methods */
 void Usage (int argc, char *argv[]);
@@ -47,7 +47,7 @@ int main( int argc, char *argv[]){
 	Usage(argc, argv);
 
 	/* 2. Connect MiProxy to DNC*/
-    Connect_MiProxy_To_DNS();
+    /*Connect_MiProxy_To_DNS();*/
 
     /* 3. Use Round Robin (0) or Geography(1) Based Load Balancing*/
     if(Geography_Based == 0){
@@ -144,8 +144,11 @@ void Handle_Server_List(int type){
             token = strtok(file_line, delimiter);
             IPList[numIPs] = token;
             token = strtok(NULL, delimiter);
-            PortList[numIPs] = token;
+            PortList[numIPs] = atoi(token);
             numIPs = numIPs + 1;
         }
+        /*printf("IPs: %s %s %s \n", IPList[0], IPList[1], IPList[2]);
+        printf("Ports: %d %d %d \n", PortList[0], PortList[1], PortList[2]);
+        printf("lines: %d\n", numIPs);*/
     }
 }
