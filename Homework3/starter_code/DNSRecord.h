@@ -12,11 +12,11 @@ struct DNSRecord
 	ushort RDLENGTH;
 	char RDATA[100];
 
-	DNSRecord()
+	/*DNSRecord()
 	{
 		memset(NAME, '\0', 100);
 		memset(RDATA, '\0', 100);
-	}
+	}*/
 };
 
 #endif

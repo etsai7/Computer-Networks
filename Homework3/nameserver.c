@@ -29,18 +29,28 @@ int    sock_address_size = sizeof(sock_client_address);
 
 /* Forking/Parallel */
 int pid;
+int r_round;
+int childret;
 
 /* IP List */
 int numIPs;
-char * IPList [100];
+char IPList [100][40];
 int  PortList [100];
+
+/* DNS Data */
+struct DNSPack     DP;
+struct DNSHeader   DH;
+struct DNSQuestion DQ;
+struct DNSRecord   DR;
 
 /* Methods */
 void Usage (int argc, char *argv[]);
 void Connect_MiProxy_To_DNS();
-void Handle_Geography_Based();
-void Handle_Round_Robin();
 void Handle_Server_List(int type);
+void Handle_Geography_Based();
+int  Handle_Round_Robin();
+void Recv_DNSPack();
+void Send_DNSPack();
 
 int main( int argc, char *argv[]){
 	/* 1. Assign User Arguments */
@@ -105,8 +115,11 @@ void Handle_Geography_Based(){
     Handle_Server_List(0);
 }
 
-void Handle_Round_Robin(){
+int Handle_Round_Robin(){
     Handle_Server_List(1);
+    return 0;
+    /* Starting round is 0 */
+    r_round = 0;
 
     while(1){
         sock_new_client = accept(sock_client, (struct sockaddr *)&sock_client_address, (socklen_t*)&sock_address_size);
@@ -122,9 +135,17 @@ void Handle_Round_Robin(){
             perror("ERROR on fork");
             exit(1);
         } else if (pid == 0){
-
+            /* Handle stuff */
+            close(sock_client);
+            Recv_DNSPack();
+            Send_DNSPack();
+            /* Update Round */
+            r_round = r_round + 1;
+            return r_round % numIPs;
         } else {
-
+            pid = wait(&childret);
+            r_round = WEXITSTATUS(childret);
+            printf("Next Round: %d\n", r_round);
         }
     }
 }
@@ -142,13 +163,26 @@ void Handle_Server_List(int type){
         while(fgets (file_line, 25, Servers_File)!= NULL){
             
             token = strtok(file_line, delimiter);
-            IPList[numIPs] = token;
+            strncpy(IPList[numIPs], token, strlen(token));
             token = strtok(NULL, delimiter);
             PortList[numIPs] = atoi(token);
             numIPs = numIPs + 1;
         }
-        /*printf("IPs: %s %s %s \n", IPList[0], IPList[1], IPList[2]);
+        printf("IPs: %s %s %s \n", IPList[0], IPList[1], IPList[2]);
         printf("Ports: %d %d %d \n", PortList[0], PortList[1], PortList[2]);
-        printf("lines: %d\n", numIPs);*/
+        printf("lines: %d\n", numIPs);
     }
+}
+
+void Recv_DNSPack(){
+    char recvd[sizeof(struct DNSPack)];
+    ssize_t nb = recv( sock_new_client, (char*)&recvd, sizeof(struct DNSPack), 0 );
+    memcpy(&DP, recvd, nb);
+    DH = DP.DHeader;
+    DQ = DP.DQuestion;
+    DR = DP.DRecord;
+}
+
+void Send_DNSPack(){
+
 }
