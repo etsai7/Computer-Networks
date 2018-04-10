@@ -16,11 +16,13 @@
 
 /* Command line arguments*/
 static char *Log;
-static int Listen_Port;
-static int Geography_Based;
+static int  Listen_Port;
+static int  Geography_Based;
 static char *Servers;
 static FILE *Servers_File;
-const char *Server_IP_List[100];
+const char  *Server_IP_List[100];
+
+#define BUFSIZE 16000
 
 /* Socket Client(MiProxy) Setup */
 int    sock_client, sock_new_client;
@@ -117,38 +119,75 @@ void Handle_Geography_Based(){
 
 int Handle_Round_Robin(){
     Handle_Server_List(1);
-    printf("IPs: %s %s %s \n", IPList[0], IPList[1], IPList[2]);
 
-    return 0;
     /* Starting round is 0 */
     r_round = 0;
+    
+    int sockfd;                     /* socket */
+    int portno;                     /* port to listen on */
+    int clientlen;                  /* byte size of client's address */
+    struct sockaddr_in serveraddr;  /* server's addr */
+    struct sockaddr_in clientaddr;  /* client addr */
+    struct hostent *hostp;          /* client host info */
+    char buf[BUFSIZE];              /* message buf */
+    char *hostaddrp;                /* dotted decimal host addr string */
+    int optval;                     /* flag value for setsockopt */
+    int n;                          /* message byte size */
 
-    while(1){
-        sock_new_client = accept(sock_client, (struct sockaddr *)&sock_client_address, (socklen_t*)&sock_address_size);
-        if (sock_new_client<0) {
-            perror("Accept Failed");
-            exit(EXIT_FAILURE);
-        } else {
-            printf("NameServer socket for MiProxy: %d\n",sock_new_client );
-        }
+    portno = Listen_Port;
+    
+    /* socket: create the parent socket */
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sockfd < 0) 
+    error("ERROR opening socket");
 
-        pid = fork();
-        if(pid < 0){
-            perror("ERROR on fork");
-            exit(1);
-        } else if (pid == 0){
-            /* Handle stuff */
-            close(sock_client);
-            Recv_DNSPack();
-            Send_DNSPack();
-            /* Update Round */
-            r_round = r_round + 1;
-            return r_round % numIPs;
-        } else {
-            pid = wait(&childret);
-            r_round = WEXITSTATUS(childret);
-            printf("Next Round: %d\n", r_round);
-        }
+    /* setsockopt: Handy debugging trick that lets 
+    * us rerun the server immediately after we kill it; 
+    * otherwise we have to wait about 20 secs. 
+    * Eliminates "ERROR on binding: Address already in use" error. 
+    */
+    optval = 1;
+    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, 
+             (const void *)&optval , sizeof(int));
+
+    /* Build the server's address */
+    bzero((char *) &serveraddr, sizeof(serveraddr));
+    serveraddr.sin_family = AF_INET;
+    serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    serveraddr.sin_port = htons((unsigned short)portno);
+
+    /* 
+    * bind: associate the parent socket with a port 
+    */
+    if (bind(sockfd, (struct sockaddr *) &serveraddr, 
+           sizeof(serveraddr)) < 0) 
+    error("ERROR on binding");
+
+    /* 
+    * main loop: wait for a datagram, then echo it
+    */
+    clientlen = sizeof(clientaddr);
+    while (1) {
+    struct DNSPack DP_ret;
+    /*
+     * recvfrom: receive a UDP datagram from a client
+     */
+    bzero(buf, BUFSIZE);
+    n = recvfrom(sockfd, (char*)&buf, sizeof(struct DNSPack), 0,
+                 (struct sockaddr *) &clientaddr, &clientlen);
+    if (n < 0)
+      error("ERROR in recvfrom");
+    memcpy(&DP_ret, buf, n);
+    DP_ret.DHeader.ID = DP_ret.DHeader.ID % numIPs;
+    printf("server received %zu/%d bytes: %d\n", strlen(buf), n, DP_ret.DHeader.ID);
+
+    /* 
+     * sendto: echo the input back to the client 
+     */
+    n = sendto(sockfd, (char*)&DP_ret, sizeof(struct DNSPack), 0, 
+               (struct sockaddr *) &clientaddr, clientlen);
+    if (n < 0) 
+      error("ERROR in sendto");
     }
 }
 
@@ -164,29 +203,30 @@ void Handle_Server_List(int type){
         numIPs = 0;
         while(fgets (file_line, 25, Servers_File)!= NULL){
             
-            /*token = strtok(file_line, delimiter);*/
-            strncpy(IPList[numIPs], file_line, strlen(file_line));
-            /*token = strtok(NULL, delimiter);
-            PortList[numIPs] = atoi(token);*/
-            
-            /*printf("Stored: %s at NumIP %d\n", IPList[numIPs], numIPs);*/
+            strncpy(IPList[numIPs], file_line, strlen(file_line)-1);
+            printf("Copying: %s\n", IPList[numIPs]);
             numIPs = numIPs + 1;
         }
-        printf("IPs: %s %s %s \n", IPList[0], IPList[1], IPList[2]);
-        /*printf("Ports: %d %d %d \n", PortList[0], PortList[1], PortList[2]);*/
+        printf("IPs:\n %s \n %s \n %s \n", IPList[0], IPList[1], IPList[2]);
         printf("lines: %d\n", numIPs);
+        fflush(stdout);
     }
 }
 
 void Recv_DNSPack(){
+    printf("Receiving DNS Pack \n");
     char recvd[sizeof(struct DNSPack)];
     ssize_t nb = recv( sock_new_client, (char*)&recvd, sizeof(struct DNSPack), 0 );
     memcpy(&DP, recvd, nb);
     DH = DP.DHeader;
     DQ = DP.DQuestion;
     DR = DP.DRecord;
+
+    printf("DH Id: %d\n", DH.ID);
+    printf("DQ QName: %s\n", DQ.QNAME);
+    printf("DR Type: %d\n", DR.TYPE);
 }
 
 void Send_DNSPack(){
-
+    printf("Sending DNS Pack \n");
 }
