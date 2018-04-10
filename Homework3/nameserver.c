@@ -117,6 +117,8 @@ void Handle_Geography_Based(){
 
 int Handle_Round_Robin(){
     Handle_Server_List(1);
+    printf("IPs: %s %s %s \n", IPList[0], IPList[1], IPList[2]);
+
     return 0;
     /* Starting round is 0 */
     r_round = 0;
@@ -159,17 +161,19 @@ void Handle_Server_List(int type){
         char file_line[25];
         const char delimiter[2] = " ";
         char *token;
-
+        numIPs = 0;
         while(fgets (file_line, 25, Servers_File)!= NULL){
             
-            token = strtok(file_line, delimiter);
-            strncpy(IPList[numIPs], token, strlen(token));
-            token = strtok(NULL, delimiter);
-            PortList[numIPs] = atoi(token);
+            /*token = strtok(file_line, delimiter);*/
+            strncpy(IPList[numIPs], file_line, strlen(file_line));
+            /*token = strtok(NULL, delimiter);
+            PortList[numIPs] = atoi(token);*/
+            
+            /*printf("Stored: %s at NumIP %d\n", IPList[numIPs], numIPs);*/
             numIPs = numIPs + 1;
         }
         printf("IPs: %s %s %s \n", IPList[0], IPList[1], IPList[2]);
-        printf("Ports: %d %d %d \n", PortList[0], PortList[1], PortList[2]);
+        /*printf("Ports: %d %d %d \n", PortList[0], PortList[1], PortList[2]);*/
         printf("lines: %d\n", numIPs);
     }
 }
