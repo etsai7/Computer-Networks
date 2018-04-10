@@ -156,38 +156,36 @@ int Handle_Round_Robin(){
     serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
     serveraddr.sin_port = htons((unsigned short)portno);
 
-    /* 
-    * bind: associate the parent socket with a port 
-    */
+    /* bind: associate the parent socket with a port */
     if (bind(sockfd, (struct sockaddr *) &serveraddr, 
            sizeof(serveraddr)) < 0) 
     error("ERROR on binding");
 
-    /* 
-    * main loop: wait for a datagram, then echo it
-    */
+    /* main loop: wait for a datagram, then echo it*/
     clientlen = sizeof(clientaddr);
     while (1) {
-    struct DNSPack DP_ret;
-    /*
-     * recvfrom: receive a UDP datagram from a client
-     */
-    bzero(buf, BUFSIZE);
-    n = recvfrom(sockfd, (char*)&buf, sizeof(struct DNSPack), 0,
-                 (struct sockaddr *) &clientaddr, &clientlen);
-    if (n < 0)
-      error("ERROR in recvfrom");
-    memcpy(&DP_ret, buf, n);
-    DP_ret.DHeader.ID = DP_ret.DHeader.ID % numIPs;
-    printf("server received %zu/%d bytes: %d\n", strlen(buf), n, DP_ret.DHeader.ID);
+        struct DNSPack DP_ret;
+        /*
+         * recvfrom: receive a UDP datagram from a client
+         */
+        bzero(buf, BUFSIZE);
+        n = recvfrom(sockfd, (char*)&buf, sizeof(struct DNSPack), 0,
+                     (struct sockaddr *) &clientaddr, &clientlen);
+        if (n < 0)
+          error("ERROR in recvfrom");
+        memcpy(&DP_ret, buf, n);
+        DP_ret.DHeader.ID = DP_ret.DHeader.ID % numIPs;
+        printf("server received %zu/%d round: %d IP: %s\n", strlen(buf), n, r_round, IPList[r_round]);
 
-    /* 
-     * sendto: echo the input back to the client 
-     */
-    n = sendto(sockfd, (char*)&DP_ret, sizeof(struct DNSPack), 0, 
-               (struct sockaddr *) &clientaddr, clientlen);
-    if (n < 0) 
-      error("ERROR in sendto");
+        memset(DP_ret.DRecord.RDATA,'\0', sizeof(DP_ret.DRecord.RDATA));
+        strncpy(DP_ret.DRecord.RDATA, IPList[r_round], strlen(IPList[r_round]));
+
+        /* sendto: echo the input back to the client */
+        n = sendto(sockfd, (char*)&DP_ret, sizeof(struct DNSPack), 0, 
+                   (struct sockaddr *) &clientaddr, clientlen);
+        if (n < 0) 
+          error("ERROR in sendto");
+        r_round = (r_round + 1) % numIPs;
     }
 }
 
@@ -203,7 +201,7 @@ void Handle_Server_List(int type){
         numIPs = 0;
         while(fgets (file_line, 25, Servers_File)!= NULL){
             
-            strncpy(IPList[numIPs], file_line, strlen(file_line)-1);
+            strncpy(IPList[numIPs], file_line, strlen(file_line));
             printf("Copying: %s\n", IPList[numIPs]);
             numIPs = numIPs + 1;
         }
