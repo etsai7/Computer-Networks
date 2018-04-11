@@ -52,15 +52,13 @@ void Connect_MiProxy_To_DNS();
 void Handle_Server_List(int type);
 void Handle_Geography_Based();
 int  Handle_Round_Robin();
-void Recv_DNSPack();
-void Send_DNSPack();
 
 int main( int argc, char *argv[]){
 	/* 1. Assign User Arguments */
 	Usage(argc, argv);
 
     /* 2. Use Round Robin (0) or Geography(1) Based Load Balancing*/
-    if(Geography_Based == 0){
+    if(Geography_Based == 1){
     	printf("Geography Based 0: %d \n", Geography_Based);
         Handle_Geography_Based();
     } else {
@@ -82,13 +80,12 @@ void Usage (int argc, char *argv[]){
 	Servers = argv[4];	
 }
 
-
 void Handle_Geography_Based(){
     Handle_Server_List(0);
 }
 
 int Handle_Round_Robin(){
-    Handle_Server_List(1);
+    Handle_Server_List(0);
 
     /* Starting round is 0 */
     r_round = 0;
@@ -131,8 +128,8 @@ int Handle_Round_Robin(){
            sizeof(serveraddr)) < 0) 
     error("ERROR on binding");
 
-    /* main loop: wait for a datagram, then echo it*/
     clientlen = sizeof(clientaddr);
+
     while (1) {
         struct DNSPack DP_ret;
         memset(buf,'\0', BUFSIZE);
@@ -149,7 +146,6 @@ int Handle_Round_Robin(){
         memset(DP_ret.DRecord.RDATA,'\0', sizeof(DP_ret.DRecord.RDATA));
         strncpy(DP_ret.DRecord.RDATA, Server_IP_List[r_round], strlen(Server_IP_List[r_round]));
 
-        /* sendto: echo the input back to the client */
         n = sendto(sockfd, (char*)&DP_ret, sizeof(struct DNSPack), 0, 
                    (struct sockaddr *) &clientaddr, clientlen);
         if (n < 0) 
@@ -159,56 +155,28 @@ int Handle_Round_Robin(){
 }
 
 void Handle_Server_List(int type){
-    if(type == 0){
+    if(type == 1){
         /* Geography Based Txt file*/
     } else {
         /* Round Robin Based Txt file*/
-        int j;
-        /* mem clearing */
-        for( j = 0; j < 10; j++ )
-        {
-            char w[25];
-            memset(w, '\0', 25);
-            Server_IP_List[j] = w;
-            
-        }
-
         char *token;
         size_t bytes = 25;
         const char delimiter[2] = " ";
         char * file_line = malloc(25 * sizeof(char));
 
-        Servers_File = fopen(Servers, "r");
-        printf("Opened File\n");
+        Servers_File = fopen(Servers, "r");\
         while(getline(&file_line, &bytes, Servers_File)!= -1){
-            printf("In whil loop\n");
             char * w = malloc(25 * sizeof(char));
             token = strtok(file_line, delimiter);
             strncpy(w, token, strlen(token));
             Server_IP_List[numIPs] = w;
             numIPs = numIPs + 1;
         }
-        printf("IPs:\n %s %s %s \n", Server_IP_List[0], Server_IP_List[1], Server_IP_List[2]);
+        int j;
+        printf("IPs: \n");
+        for(j = 0; j < numIPs; j++){
+            printf("\t%s\n", Server_IP_List[j]);
+        }
         printf("lines: %d\n", numIPs);
-
-        fflush(stdout);
     }
-}
-
-void Recv_DNSPack(){
-    printf("Receiving DNS Pack \n");
-    char recvd[sizeof(struct DNSPack)];
-    ssize_t nb = recv( sock_new_client, (char*)&recvd, sizeof(struct DNSPack), 0 );
-    memcpy(&DP, recvd, nb);
-    DH = DP.DHeader;
-    DQ = DP.DQuestion;
-    DR = DP.DRecord;
-
-    printf("DH Id: %d\n", DH.ID);
-    printf("DQ QName: %s\n", DQ.QNAME);
-    printf("DR Type: %d\n", DR.TYPE);
-}
-
-void Send_DNSPack(){
-    printf("Sending DNS Pack \n");
 }
