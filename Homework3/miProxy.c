@@ -1,15 +1,22 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+/*#include <unistd.h>*/
 
 #include <sys/socket.h>
 #include <netinet/in.h> 
+#include <netdb.h> 
 #include <sys/select.h>
 #include <sys/types.h>
 
 #include <errno.h>
 
+#include "./starter_code/DNSHeader.h"
+#include "./starter_code/DNSQuestion.h"
+#include "./starter_code/DNSPack.h"
+
 #define MAX_BUFFER /*9697*/16033
+#define BUFSIZE 16033
 
 static char  *Log;
 static float Alpha;
@@ -17,9 +24,9 @@ static int   Listen_Port;
 static char  *DNS_IP;
 static int   DNS_Port;
 static char  *www_ip;
-static int T_cur;
-static int T_new;
-static int Server_Port = 80;
+static int   T_cur;
+static int   T_new;
+static int   Server_Port = 80;
 
 char T_cur_string[10];
 char bf1[10];
@@ -36,6 +43,9 @@ int    sock_address_size = sizeof(sock_client_address);
 int    sock_server, sock_new_server;
 struct sockaddr_in sock_server_address;
 int    sock_address_server_size = sizeof(sock_server_address);
+
+/* DNS Data */
+struct DNSPack DP;
 
 /* Forking/Parallel */
 int pid;
@@ -54,6 +64,8 @@ struct timeval t_start, t_end, temp;
 
     /* Setup */
 void Usage (int argc, char *argv[]);
+void DNS_Build_Pack();
+void DNS_Lookup();
 void Connect_ClientBrowser_To_MiProxy();
 void Connect_MiProxy_To_Apache();
 void Handle_Initial_Files();
@@ -85,20 +97,30 @@ void Clear_Data();
 int main( int argc, char *argv[] ){
 	www_ip = "video.cse.umich.edu";
 
-
     /* 1. Assign User Arguments */
 	Usage(argc, argv);
 
-    /* 2. Connect Browser Client to miProxy*/
+    /* 2. Build DNS Packet */
+    DNS_Build_Pack();
+
+    /* 3. DNS Lookup */
+    if(argc == 6){
+        DNS_Lookup();
+    }
+    printf("www_ip: %s\n", www_ip);
+
+    /* 4 Connect Browser Client to miProxy*/
     Connect_ClientBrowser_To_MiProxy();
 
-    /* 3. Connect miProxy to Apache Server */
+    /* 5. Connect miProxy to Apache Server */
     Connect_MiProxy_To_Apache();
 
-    /* 4. Handle Initial Files before Video Reqs*/
+    return 0;
+
+    /* 6. Handle Initial Files before Video Reqs*/
     Handle_Initial_Files();
 
-    /* 5. Stream Video Files*/
+    /* 7. Stream Video Files*/
     Handle_Video_Requests();
 
 	return 0;
@@ -129,6 +151,87 @@ void Usage(int argc, char *argv[]){
 	printf("DNS Port:     %d\n", DNS_Port);
 	printf("www-ip:       %s\n", www_ip);
 	printf("-----------------------------------------------------------\n\n ");
+}
+
+void DNS_Lookup(){
+    int sockfd, portno, n;
+    int serverlen;
+    struct sockaddr_in serveraddr;
+    struct hostent *server;
+    char *hostname;
+    char buf[BUFSIZE];
+
+    hostname = DNS_IP;
+    portno = DNS_Port;
+
+    /* socket: create the socket */
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sockfd < 0) 
+        error("ERROR opening socket");
+
+    /* gethostbyname: get the server's DNS entry */
+    server = gethostbyname(hostname);
+    if (server == NULL) {
+        fprintf(stderr,"ERROR, no such host as %s\n", hostname);
+        exit(0);
+    }
+
+    /* build the server's Internet address */
+    bzero((char *) &serveraddr, sizeof(serveraddr));
+    serveraddr.sin_family = AF_INET;
+    bcopy((char *)server->h_addr, 
+      (char *)&serveraddr.sin_addr.s_addr, server->h_length);
+    serveraddr.sin_port = htons(portno);
+
+    struct DNSPack DP_ret;
+    memset(buf,'\0', BUFSIZE);
+
+    /* send the message to the server */
+    serverlen = sizeof(serveraddr);
+    n = sendto(sockfd, (char *)&DP, sizeof(DP), 0, (struct sockaddr *)&serveraddr, serverlen);
+    if (n < 0) 
+      error("ERROR in sendto");
+    
+    /* print the server's reply */
+    n = recvfrom(sockfd, (char*)&buf, sizeof(struct DNSPack), 0, (struct sockaddr *)&serveraddr, &serverlen);
+    if (n < 0) 
+      error("ERROR in recvfrom");
+    memcpy(&DP_ret, buf, n);
+    printf("Echo from server. IP Received: %s\n", DP_ret.DRecord.RDATA);
+    www_ip = DP_ret.DRecord.RDATA;
+
+}
+
+void DNS_Build_Pack(){
+    struct DNSHeader   dh;
+    struct DNSQuestion dq;
+    struct DNSRecord   dr;
+
+    dh.ID = 1;
+    dh.QR = 0;
+    dh.OPCODE = 1;
+    dh.AA = 0;
+    dh.TC = 3;
+    dh.RD = 0;
+    dh.RA = 0;
+    dh.Z = '0';
+    dh.RCODE = 'b';
+    dh.QDCOUNT = 6;
+    dh.ANCOUNT = 7;
+    dh.NSCOUNT = 0;
+    dh.ARCOUNT = 0;
+
+    char z[50] = "MiProxy";
+    memset(dq.QNAME, '\0', 100);
+    memcpy(dq.QNAME, z, sizeof(z));
+
+    memset(dr.NAME, '\0', 100);
+    memset(dr.RDATA, '\0', 100);
+    dr.TYPE = 100;
+
+    DP.DHeader = dh;
+    DP.DQuestion = dq;
+    DP.DRecord = dr;
 }
 
 /*------------------Connection Setups------------------*/
@@ -180,10 +283,10 @@ void Connect_MiProxy_To_Apache(){
     }
     printf("\nMiProxy socket to connect to Apache Server: %d\n", sock_server);
 
-    /* Set Target Server Address */
     memset(&sock_server_address, '0', sizeof(sock_server_address));
     sock_server_address.sin_family = AF_INET;
     sock_server_address.sin_port = htons( Server_Port );
+    printf("www_ip: %s\n", www_ip);
     if(inet_pton(AF_INET, www_ip, &sock_server_address.sin_addr)<=0) /* Converts text to binary */
     {
         perror("Invalid address/ Address not supported \n");

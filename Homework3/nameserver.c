@@ -20,9 +20,9 @@ static int  Listen_Port;
 static int  Geography_Based;
 static char *Servers;
 static FILE *Servers_File;
-const char  *Server_IP_List[100];
 
-#define BUFSIZE 16000
+
+#define BUFSIZE 16033
 
 /* Socket Client(MiProxy) Setup */
 int    sock_client, sock_new_client;
@@ -36,6 +36,7 @@ int childret;
 
 /* IP List */
 int numIPs;
+char  *Server_IP_List[100];
 char IPList [100][40];
 int  PortList [100];
 
@@ -58,10 +59,7 @@ int main( int argc, char *argv[]){
 	/* 1. Assign User Arguments */
 	Usage(argc, argv);
 
-	/* 2. Connect MiProxy to DNC*/
-    /*Connect_MiProxy_To_DNS();*/
-
-    /* 3. Use Round Robin (0) or Geography(1) Based Load Balancing*/
+    /* 2. Use Round Robin (0) or Geography(1) Based Load Balancing*/
     if(Geography_Based == 0){
     	printf("Geography Based 0: %d \n", Geography_Based);
         Handle_Geography_Based();
@@ -84,34 +82,6 @@ void Usage (int argc, char *argv[]){
 	Servers = argv[4];	
 }
 
-void Connect_MiProxy_To_DNS(){
-	/* Socket Creation */
-    sock_client = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock_client < 0){
-        perror("Client Connection: socket setup failed\n");
-        exit(1);
-    }
-
-    /* Attaching socket to port */
-    sock_client_address.sin_family = AF_INET;
-    sock_client_address.sin_addr.s_addr = INADDR_ANY;/* INADDR_ANY; */
-    sock_client_address.sin_port = htons( Listen_Port );
-
-    /* Binding socket */
-    if (bind(sock_client, (struct sockaddr *)&sock_client_address, sizeof(sock_client_address))<0) {
-        perror("Client Socket Bind Failed");
-        exit(1);
-    }
-
-    /* Listen for incoming clients */
-    if (listen(sock_client, 8)<0) {
-        perror("Client Socket Listen Failed");
-        exit(1);
-    } 
-
-    /* miProxy will be accepting in an infinite while loop back in main*/
-    printf("----------END OF Proxy -> DNS Setup----------\n");
-}
 
 void Handle_Geography_Based(){
     Handle_Server_List(0);
@@ -165,20 +135,19 @@ int Handle_Round_Robin(){
     clientlen = sizeof(clientaddr);
     while (1) {
         struct DNSPack DP_ret;
-        /*
-         * recvfrom: receive a UDP datagram from a client
-         */
-        bzero(buf, BUFSIZE);
+        memset(buf,'\0', BUFSIZE);
+
         n = recvfrom(sockfd, (char*)&buf, sizeof(struct DNSPack), 0,
                      (struct sockaddr *) &clientaddr, &clientlen);
         if (n < 0)
           error("ERROR in recvfrom");
+      
         memcpy(&DP_ret, buf, n);
         DP_ret.DHeader.ID = DP_ret.DHeader.ID % numIPs;
-        printf("server received %zu/%d round: %d IP: %s\n", strlen(buf), n, r_round, IPList[r_round]);
+        printf("server received %zu/%d round: %d IP: %s from %s\n", strlen(buf), n, r_round, IPList[r_round], DP_ret.DQuestion.QNAME);
 
         memset(DP_ret.DRecord.RDATA,'\0', sizeof(DP_ret.DRecord.RDATA));
-        strncpy(DP_ret.DRecord.RDATA, IPList[r_round], strlen(IPList[r_round]));
+        strncpy(DP_ret.DRecord.RDATA, Server_IP_List[r_round], strlen(Server_IP_List[r_round]));
 
         /* sendto: echo the input back to the client */
         n = sendto(sockfd, (char*)&DP_ret, sizeof(struct DNSPack), 0, 
@@ -194,19 +163,34 @@ void Handle_Server_List(int type){
         /* Geography Based Txt file*/
     } else {
         /* Round Robin Based Txt file*/
-        Servers_File = fopen(Servers, "r");
-        char file_line[25];
-        const char delimiter[2] = " ";
-        char *token;
-        numIPs = 0;
-        while(fgets (file_line, 25, Servers_File)!= NULL){
+        int j;
+        /* mem clearing */
+        for( j = 0; j < 10; j++ )
+        {
+            char w[25];
+            memset(w, '\0', 25);
+            Server_IP_List[j] = w;
             
-            strncpy(IPList[numIPs], file_line, strlen(file_line));
-            printf("Copying: %s\n", IPList[numIPs]);
+        }
+
+        char *token;
+        size_t bytes = 25;
+        const char delimiter[2] = " ";
+        char * file_line = malloc(25 * sizeof(char));
+
+        Servers_File = fopen(Servers, "r");
+        printf("Opened File\n");
+        while(getline(&file_line, &bytes, Servers_File)!= -1){
+            printf("In whil loop\n");
+            char * w = malloc(25 * sizeof(char));
+            token = strtok(file_line, delimiter);
+            strncpy(w, token, strlen(token));
+            Server_IP_List[numIPs] = w;
             numIPs = numIPs + 1;
         }
-        printf("IPs:\n %s \n %s \n %s \n", IPList[0], IPList[1], IPList[2]);
+        printf("IPs:\n %s %s %s \n", Server_IP_List[0], Server_IP_List[1], Server_IP_List[2]);
         printf("lines: %d\n", numIPs);
+
         fflush(stdout);
     }
 }
