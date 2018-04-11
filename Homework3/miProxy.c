@@ -115,8 +115,6 @@ int main( int argc, char *argv[] ){
     /* 5. Connect miProxy to Apache Server */
     Connect_MiProxy_To_Apache();
 
-    return 0;
-
     /* 6. Handle Initial Files before Video Reqs*/
     Handle_Initial_Files();
 
