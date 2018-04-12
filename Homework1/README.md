@@ -93,3 +93,5 @@ If you have trouble launching the script, a common fix is to first try running `
 Hosts (`h1` through `h10`) are represented by squares and switches (`s1` to `s6`) are represented by circles; the names in the diagram match the names of hosts and switches in Mininet. The hosts are assigned IP addresses 10.0.0.1 through 10.0.0.10; the last number in the IP address matches the host number.
 
 **NOTE:** When running ping and `iPerfer` in Mininet, you must use IP addresses, not hostnames.
+
+### [Homework 1 Source](https://github.com/xinjin/course-net/tree/master/assignments/assignment1)
