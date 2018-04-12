@@ -87,6 +87,33 @@ NUM_LINKS: <number of links in the network>
 
 <img src="Images/link-cost.PNG" title="Video CDN in the wild" alt="" width="400" height="155"/>
 
+As an example, the network shown above will have the following text file:
+```
+NUM_NODES: 6
+0 CLIENT 10.0.0.1
+1 CLIENT 10.0.0.2
+2 SWITCH NO_IP
+3 SWITCH NO_IP
+4 SERVER 10.0.0.3
+5 SERVER 10.0.0.4
+NUM_LINKS: 5
+0 2 1
+1 2 1
+2 3 1
+3 4 6
+3 5 1
+```
+
+To operate `nameserver`, it should be invoked as follows:
+
+`./nameserver <log> <port> <geography_based> <servers>`
+
+* `log` The file path to which you should log the messages as described below.
+* `port` The port on which your server should listen.
+* `geography_based` An integer that will either be 0 or 1. If it is 0, use the round-robin load balancing scheme, otherwise implement the distance based scheme.
+* `servers` A text file containing a list of IP addresses, one per line, belonging to content servers if geography_based is 0. Otherwise it will be a text file describing the network topology as explained above.
+
+
 <a name="part2"></a>
 ## Part 2: MiProxy Bitrate Adaptation
 
