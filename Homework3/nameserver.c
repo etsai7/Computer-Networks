@@ -161,7 +161,7 @@ void Handle_Server_List(int type){
         /* Round Robin Based Txt file*/
         char *token;
         size_t bytes = 25;
-        const char delimiter[2] = " ";
+        const char delimiter[2] = "\n";
         char * file_line = malloc(25 * sizeof(char));
 
         Servers_File = fopen(Servers, "r");\
