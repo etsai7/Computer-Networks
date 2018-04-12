@@ -46,5 +46,6 @@ You are to implement a simple HTTP proxy, `miProxy`. It accepts connections from
 
 `miProxy` should listen for browser connections on `INADDR_ANY` on the port specified on the command line. It should then connect to web servers either specified on the command line (see below) or issue a DNS query to find out the IP address of the server to contact (this is covered in part 2).
 
-
 Path to Apache file /var/www
+
+### [Homework 2 Source](https://github.com/xinjin/course-net/tree/master/assignments/assignment2)
