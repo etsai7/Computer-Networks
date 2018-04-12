@@ -113,7 +113,6 @@ To operate `nameserver`, it should be invoked as follows:
 * `geography_based` An integer that will either be 0 or 1. If it is 0, use the round-robin load balancing scheme, otherwise implement the distance based scheme.
 * `servers` A text file containing a list of IP addresses, one per line, belonging to content servers if geography_based is 0. Otherwise it will be a text file describing the network topology as explained above.
 
-
 <a name="part2"></a>
 ## Part 2: MiProxy Bitrate Adaptation
 
@@ -132,3 +131,5 @@ To operate `miProxy`, it should be invoked as follows:
 * `dns-ip` IP address of the DNS server.
 * `dns-port` Port number DNS server listens on.
 * `www-ip` Your proxy should accept an optional argument specifying the IP address of the web server from which it should request video chunks. If this argument is not present, your proxy should obtain the web server's IP address by querying your DNS server for the name `video.cs.jhu.edu`.
+
+### [Homework 3 Source](https://github.com/xinjin/course-net/tree/master/assignments/assignment3)
