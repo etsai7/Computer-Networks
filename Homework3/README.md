@@ -131,5 +131,5 @@ To operate `miProxy`, it should be invoked as follows:
 * `dns-ip` IP address of the DNS server.
 * `dns-port` Port number DNS server listens on.
 * `www-ip` Your proxy should accept an optional argument specifying the IP address of the web server from which it should request video chunks. If this argument is not present, your proxy should obtain the web server's IP address by querying your DNS server for the name `video.cs.jhu.edu`.
-
+ 
 ### [Homework 3 Source](https://github.com/xinjin/course-net/tree/master/assignments/assignment3)
