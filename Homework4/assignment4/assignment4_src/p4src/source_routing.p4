@@ -14,36 +14,68 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// TODO: define headers & header instances
-header_type easy_route {
+header_type easy_route_header {
 	fields {
 		preamble : 64;   /* This is in bits*/
 		num_valid : 32;
-		port_1 : 8;
-		port_2 : 8;
-		port_3 : 8;
 	}
 }
 
+header easy_route_header easy_route_head;
+
+header_type easy_route_port_header {
+    fields {
+        port : 8;
+    }
+}
+
+header easy_route_port_header easy_route_port_head;
 
 parser start {
-    // TODO
+    return select(current(0, 64)) {
+        0: parse_head;
+        default: ingress;
+    }
     return ingress;
 }
 
-// TODO: define parser states
+parser parse_head {
+    extract(easy_route_head);
+    return select(latest.num_valid) {
+        0: ingress;
+        default: parse_port;
+    }
+}
+
+parser parse_port {
+    extract(easy_route_port_head);
+    return ingress;
+}
+
 
 action _drop() {
     drop();
 }
 
 action route() {
-    modify_field(standard_metadata.egress_spec, /* TODO: port field from your header */);
-    // TODO: update your header
+    modify_field(standard_metadata.egress_spec, easy_route_port_head.port);
+    add_to_field(easy_route_head.num_valid, -1);
+    remove_header(easy_route_port_head);
+}
+
+table route_pkt {
+    reads {
+        easy_route_port_head: valid;
+    }
+    actions {
+        _drop;
+        route;
+    }
+    size: 1;
 }
 
 control ingress {
-    // TODO
+    apply(route_pkt);
 }
 
 control egress {
