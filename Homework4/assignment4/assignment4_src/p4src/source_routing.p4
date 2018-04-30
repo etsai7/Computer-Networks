@@ -15,10 +15,10 @@ limitations under the License.
 */
 
 header_type easy_route_header {
-	fields {
-		preamble : 64;   /* This is in bits*/
-		num_valid : 32;
-	}
+    fields {
+        preamble : 64;   /* This is in bits*/
+        num_valid : 32;
+    }
 }
 
 header easy_route_header easy_route_head;
