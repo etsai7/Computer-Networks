@@ -1,0 +1,2 @@
+table_set_default kv_table get
+table_add kv_table put 1 =>
