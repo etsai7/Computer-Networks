@@ -36,7 +36,6 @@ parser start {
         0: parse_head;
         default: ingress;
     }
-    return ingress;
 }
 
 parser parse_head {
