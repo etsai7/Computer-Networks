@@ -215,7 +215,7 @@ You can use part of the code in EasyRoute and implement the key-value store func
 ### Testing your code
 **Note:** It may be best to run `sudo mn -c` beforehand to clear mininet
 
-`./kv.sh` will compile your code and create the Mininet network described
+`./run_kv.sh` will compile your code and create the Mininet network described
 above. It will also use commands_kv.txt to configure each one of the switches.
 Once the network is up and running, you should type the following in the Mininet
 CLI:
