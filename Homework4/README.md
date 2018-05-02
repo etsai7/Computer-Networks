@@ -59,3 +59,5 @@ like this:
 <a name="before-starting-the-exercises"></a>
 ## Before starting the exercises
 Update the values of the shell variables `BMV2_PATH` and `P4C_BM_PATH` in the `env.sh` file. **Note** that if you cloned both repositories in the same directory as this one, you will not need to change the value of the variables.)
+
+### [Homework 4 Source](https://github.com/xinjin/course-net/tree/master/assignments/assignment4)
