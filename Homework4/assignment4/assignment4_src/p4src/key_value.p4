@@ -53,13 +53,13 @@ action _drop() {
 
 action put(){
     register_write(my_register, keyvalue_head.key, keyvalue_head.value);
-    modify_field(keyvalue_head.mtype, 2);
+    modify_field(keyvalue_head.mtype, 3);
     modify_field(standard_metadata.egress_spec, standard_metadata.ingress_port);
 }
 
 action get(){
     register_read(keyvalue_head.value , my_register, keyvalue_head.key);
-    modify_field(keyvalue_head.mtype, 3);
+    modify_field(keyvalue_head.mtype, 2);
     modify_field(standard_metadata.egress_spec, standard_metadata.ingress_port);
 }
 
