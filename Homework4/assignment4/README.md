@@ -6,21 +6,21 @@ In this assignment, you will use P4 and Mininet to design network features.
 
 ## Outline
 
-- [Introduction](#introduction)
-- [Obtaining required software](#obtaining-required-software)
-- [Before starting the exercises](#before-starting-the-exercises)
-- [Exercise 1: Source Routing](#exercise-1-source-routing)
+* [Deliverables](#Deliverables)
+* [Exercise 1: Source Routing](#exercise-1-source-routing)
   - [Description of the EasyRoute protocol](#description-of-the-easyroute-protocol)
   - [A few hints](#a-few-hints)
   - [Populating the tables](#populating-the-tables)
   - [Testing your code](#testing-your-code)
   - [Debugging your code](#debugging-your-code)
-- [Exercise 2: Key-Value Store](#exercise-2-key-value-store)
+* [Exercise 2: Key-Value Store](#exercise-2-key-value-store)
   - [What is key-value store](#what-is-key-value-store)
   - [What you need to do](#what-you-need-to-do)
-- [Bonus: Implement NetChain](#bonus-implement-netchain)
-## Deliverables
+  - [Testing Key-Value Store](#test-key-value-store)
+* [Bonus: Implement NetChain](#bonus-implement-netchain)
 
+<a name="Deliverables"></a>
+## Deliverables
 Submit your source code for the two exercises, in two separate folders `exercise1` and `exercise2`, and together in one 
 `assignment4.zip` file. Please provide a `README.txt` file for each exercise in their corresponding folder descibing any 
 specific instructions needed to run your code. We will run your code exactly in the `assignment4_src` directory of this 
@@ -35,60 +35,6 @@ assign partial credit (meaning that you will not get more than half of the credi
 
 You can try implementing NetChain for bonus. The maximal bonus can be 5 points. Submit your source code in a folder called `netchain` in the zip file.
 
-## Introduction
-
-This assignment includes 2 exercises: *Source Routing*
-and *Key-Value Store*. Both exercises assume that you possess basic networking
-knowledge and some familiarity with the P4 language. Please take a look at the
-[P4 language spec](https://p4.org/p4-spec/p4-14/v1.0.4/tex/p4.pdf) and at the example `simple_router`
-target [on
-p4lang](https://github.com/p4lang/p4factory/tree/master/targets/simple_router/p4src).
-*Source Routing* asks you to write a P4 program to implement a
-custom source routing protocol. *Key-Value Store* asks you to write a P4 program to implement a key-value store in the switch. We use P4_14 in this assignment.
-
-
-## Obtaining required software
-
-To complete the exercises, you will need to clone 2 p4lang Github repositories
-and install their dependencies. To clonde the repositories:
-
-- `git clone https://github.com/p4lang/behavioral-model.git bmv2`
-- `git clone https://github.com/p4lang/p4c-bm.git p4c-bmv2`
-
-The first repository ([bmv2](https://github.com/p4lang/behavioral-model)) is the
-second version of the behavioral model. It is a C++ software switch that will
-behave according to your P4 program. The second repository
-([p4c-bmv2](https://github.com/p4lang/p4c-bm)) is the compiler for the
-behavioral model: it takes P4 program and output a JSON file which can be loaded
-by the behavioral model.
-
-Each of these repositories come with dependencies. `p4c-bmv2` is a Python
-repository and installing the required Python dependencies is very easy to do
-using `pip`: `sudo pip install -r requirements.txt`.
-
-`bmv2` is a C++ repository and has more external dependencies. They are listed
-in the
-[README](https://github.com/p4lang/behavioral-model/blob/master/README.md). If
-you are running Ubuntu 14.04+, the dependencies should be easy to install (you
-can use the `install_deps.sh` script that comes with `bmv2`). Do not forget to
-build the code once all the dependencies have been installed:
-
-- `./autogen.sh`
-- `./configure`
-- `make`
-
-You will also need to install `mininet`, as well as the following Python
-packages: `scapy`, `thrift` (>= 0.9.2) and `networkx`. On Ubuntu, it would look
-like this:
-- `sudo apt-get install mininet`
-- `sudo pip install scapy thrift networkx`
-
-**NOTE FOR MAC USERS**: OS X currently doesn't support native Mininet installation. You 
-would need to do this assignment in a virtual ubuntu environment. The easiest way would 
-probably be through running a pre-packaged Mininet/Ubuntu VM in VirtualBox, please read 
-carefully and follow through the instructions in [here](http://mininet.org/download/). 
-For later running `xterm` to open terminal on hosts, you probably need to install 
-[XQuartz](https://www.xquartz.org).
 
 [//]: # (## Before starting the exercises)
 
@@ -98,8 +44,8 @@ For later running `xterm` to open terminal on hosts, you probably need to instal
 
 [//]: # (That's all :)
 
+<a name="exercise-1-source-routing"></a>
 ## Exercise 1: Source Routing
-
 Place yourself in the `assignment4_src` directory [here](https://github.com/xinjin/course-net/tree/master/assignments/assignment4/assignment4_src).
 
 **NOTE**: Please do 
@@ -122,9 +68,8 @@ skeleton program:
 (You probably need to modify the sourcing path in script `course-net/assignments/assignment4/env.sh` 
 to let it successfully find the directory it wants in your local environment.)
 
-
+<a name="description-of-the-easyroute-protocol"></a>
 ### Description of the EasyRoute protocol
-
 The EasyRoute packets looks like this:
 
 ```
@@ -171,6 +116,7 @@ Your P4 implementation needs to adhere to the following requirements:
 2. **if a switch receives an EasyRoute packet for which num_valid is 0, the
 packet should be dropped**
 
+<a href="a-few-hints"></a>
 ### A few hints
 
 1. in the start parse state, you can use `current()` to check if the packet is
@@ -196,8 +142,8 @@ EasyRoute.
 together to come up with language constructs needed to be able to parse
 TLV-style headers soon.
 
+<a href="populating-the-tables"></a>
 ### Populating the tables
-
 Once your P4 code is ready (you can validate it easily by running `p4-validate`
 on it), you need to think about populating the tables. We made it easy for you:
 you just have to fill the commands.txt file with `bmv2` CLI commands. We think
@@ -208,9 +154,11 @@ set the default action of a given table
 - `table_add <table_name> <action_name> <match_fields> => [action_data]`: this
 is used to add an entry to a table
 
+<a href="testing-your-code"></a>
 ### Testing your code
+**Note:** It may be best to run `sudo mn -c` beforehand to clear mininet
 
-./run_demo.sh will compile your code and create the Mininet network described
+`./run_demo.sh` will compile your code and create the Mininet network described
 above. It will also use commands.txt to configure each one of the switches.
 Once the network is up and running, you should type the following in the Mininet
 CLI:
@@ -228,20 +176,21 @@ You should then be able to type messages on h1 and receive them on h3. The
 `send.py` program finds the shortest path between h1 and h3 using Dijkstra, then
 send correctly-formatted packets to h3 through s1 and s3.
 
+<a href="debugging-your-code"></a>
 ### Debugging your code
-
 .pcap files will be generated for every interface (9 files: 3 for each of the 3
 switches). You can look at the appropriate files and check that your packets are
 being processed correctly.
 
+<a href="exercise-2-key-value-store"></a>
 ## Exercise 2: Key-Value Store
 
+<a href="what-is-key-value-store"></a>
 ### What is key-value store
-
 A key-value store is a storage service. Each item in the key-value store has a key, which is the name of the item, and a value, which is the actual content of the item. A key-value store provides two basic funcions: `get(key)` and `put(key, value)`. The function `get(key)` gets the value of the corresponding key from the key-value store. The function `put(key, value)` updates the value of the corresoponding key in the key-value store.
 
+<a href="what-you-need-to-do"></a>
 ### What you need to do
-
 You will implement a key-value store in the switch with P4. The key-value packets may look like this:
 ```
 preamble (8 bytes) | num_valid (4 bytes) | port (1 byte) | type (1 byte) 
@@ -262,20 +211,37 @@ To make it simple, you do not need to implement sohpisicated routing in this ass
 
 You can use part of the code in EasyRoute and implement the key-value store functionality. Set the size of the key-value store in the switch to be 1000. You need to modify the kv.py in order to implement a simple client that can issue get and put queries to the switch.
 
-### Performance requirement
+<a href="test-key-value-store"></a>
+### Testing your code
+**Note:** It may be best to run `sudo mn -c` beforehand to clear mininet
 
+`./kv.sh` will compile your code and create the Mininet network described
+above. It will also use commands_kv.txt to configure each one of the switches.
+Once the network is up and running, you should type the following in the Mininet
+CLI:
+
+- `xterm h1 h1`
+
+This will open up to terminals on h1.
+
+On the first h1 run: `./receive_kv.py` or `python receive_kv.py`
+
+On the second h1 run: `./kv.py put <key> <value>` or `python kv.py put <key> <value>`for a put request
+
+Or run:`./kv.py get <key>` or `python kv.py get <key> `for a get request
+
+### Performance requirement
 1. Do not modify the topology used in exercise 1. Run the key-value store process on host 1 and switch 1.
 2. Open a terminal on host 1 with `xterm h1` and run `./kv.py`, you should be able to issue the `get` and `put` query with commands `put [key] [value]` and `get [key]`, for example `put 1 11` and `get 1`.
 3. You should receive reply messages from switch 1 on host 1 and display the type, key and value fields in each reply 
 message.
 
 ### Hints
-
 1. You could just implement kv.py with a modified version of send.py.
 2. You could open a second terminal on h1 and run an adjusted recieve.py to receive and display reply messages.
 3. You can assume the key and value are both integers, and use key as the array index to access register.
 
+<a href="bonus-implement-netchain"></a>
 ## Bonus: Implement NetChain
-
 1. Read the [NetChain](https://www.cs.jhu.edu/~xinjin/files/NSDI18_NetChain.pdf) paper carefully.
 2. Implementing NetChain with p4 code. You will get bonus (up tp 5 points) based on your work on NetChain.

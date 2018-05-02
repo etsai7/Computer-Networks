@@ -2,9 +2,11 @@
 
 In this assignment, you will use P4 and Mininet to design network features.
 
-- [Introduction](#introduction)
-- [Obtaining required software](#obtaining-required-software)
+* [Introduction](#introduction)
+* [Obtaining required software](#obtaining-required-software)
+* [Before starting the exercises](#before-starting-the-exercises)
 
+<a name="introduction"></a>
 ## Introduction
 This assignment includes 2 exercises: *Source Routing*
 and *Key-Value Store*. Both exercises assume that you possess basic networking
@@ -15,8 +17,8 @@ p4lang](https://github.com/p4lang/p4factory/tree/master/targets/simple_router/p4
 *Source Routing* asks you to write a P4 program to implement a
 custom source routing protocol. *Key-Value Store* asks you to write a P4 program to implement a key-value store in the switch. We use P4_14 in this assignment.
 
+<a name="obtaining-required-software"></a>
 ## Obtaining required software
-
 [We are providing a VM](http://www.cs.jhu.edu/~hzhu/proj4.ova) that has all the components you need to get started on the assignment. Or you can follow the instruction below to set up the environment manually.
 
 Otherwise, you will need to clone 2 p4lang Github repositories and install their dependencies. To clonde the repositories:
@@ -53,3 +55,7 @@ like this:
 - `sudo pip install scapy thrift networkx`
 
 **NOTE FOR MAC USERS**: OS X currently doesn't support native Mininet installation. You would need to do this assignment in a virtual ubuntu environment. The easiest way would probably be through running a pre-packaged Mininet/Ubuntu VM in VirtualBox, please read carefully and follow through the instructions in [here](http://mininet.org/download/). For later running `xterm` to open terminal on hosts, you probably need to install [XQuartz](https://www.xquartz.org).
+
+<a name="before-starting-the-exercises"></a>
+## Before starting the exercises
+Update the values of the shell variables `BMV2_PATH` and `P4C_BM_PATH` in the `env.sh` file. **Note** that if you cloned both repositories in the same directory as this one, you will not need to change the value of the variables.)
